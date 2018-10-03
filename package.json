@@ -1,0 +1,31 @@
+{
+  "name": "wieldo",
+  "version": "1.0.0",
+  "description": "Helps to manage dependencies in monorepo",
+  "main": "build/index.js",
+  "typings": "build/index.d.ts",
+  "repository": "git@github.com:kamilkisiela/wieldo.git",
+  "author": "Kamil Kisiela <kamil.kisiela@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "bin": {
+    "wieldo": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prerelease": "yarn build",
+    "release": "npm publish"
+  },
+  "devDependencies": {
+    "@types/node": "10.11.3",
+    "@types/semver": "5.5.0",
+    "@types/shelljs": "0.8.0",
+    "typescript": "3.1.1"
+  },
+  "dependencies": {
+    "chalk": "2.4.1",
+    "commander": "^2.18.0",
+    "semver": "^5.5.1",
+    "shelljs": "^0.8.2"
+  }
+}
