@@ -148,6 +148,7 @@ function setVersion(name: string, version: string) {
 
 // Runs hooks on every package
 function runHooks(type: string, name: string, version: string) {
+  const container = 'wieldo';
   const packages: string[] = fs
     .readdirSync(path.resolve(root, 'packages'))
     .filter(dir =>
@@ -157,11 +158,11 @@ function runHooks(type: string, name: string, version: string) {
   packages.forEach(packageName => {
     const pkg = JSON.parse(readPackageJson(packageName));
 
-    if (!pkg['package-hooks']) {
+    if (!pkg[container]) {
       return;
     }
 
-    const hooks = pkg['package-hooks'];
+    const hooks = pkg[container];
 
     if (hooks[type]) {
       const fn = eval(
