@@ -1,13 +1,18 @@
 {
   "name": "wieldo",
   "version": "1.0.0",
-  "description": "Helps to manage dependencies in monorepo",
+  "description": "Manages relations between packages in monorepo",
   "main": "build/index.js",
   "typings": "build/index.d.ts",
   "repository": "git@github.com:kamilkisiela/wieldo.git",
   "author": "Kamil Kisiela <kamil.kisiela@gmail.com>",
   "license": "MIT",
   "private": false,
+  "keywords": [
+    "monorepo",
+    "tool",
+    "packages"
+  ],
   "bin": {
     "wieldo": "./build/index.js"
   },
