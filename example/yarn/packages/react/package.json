@@ -1,0 +1,12 @@
+{
+    "name": "@example/react",
+    "version": "1.0.0",
+    "description": "",
+    "peerDependencies": {
+        "@example/core": "7.0.0"
+    },
+    "dependencies": {
+        "react": "16.0.0",
+        "graphql": "14.0.2"
+    }
+}

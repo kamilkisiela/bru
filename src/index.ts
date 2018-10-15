@@ -17,6 +17,8 @@ import {
   compare,
 } from './helpers';
 
+import { Manager } from './manager';
+
 const root = process.cwd();
 
 const helpers = {
@@ -30,13 +32,31 @@ const helpers = {
 program.version('1.0.0');
 
 program
+  .command('info <name>')
+  .description('Info about packages')
+  .action(async () => {
+    log(chalk.blue('Getting info'));
+
+    try {
+      const manager = new Manager();
+      const pkg = await manager.info();
+
+      console.log(pkg);
+    } catch (e) {
+      handleError(e, ['Failed to get info']);
+    }
+  });
+
+program
   .command('version <name> <version>')
   .description('Sets a new version of a package')
-  .action((name, version) => {
+  .action(async (name, version) => {
     log(chalk.blue('Updating', chalk.bold(name)));
 
     try {
-      setVersion(name, version);
+      // setVersion(name, version);
+      const manager = new Manager();
+      await manager.setVersion(name, version);
       
       log('');
       log(

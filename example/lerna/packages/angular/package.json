@@ -1,0 +1,12 @@
+{
+    "name": "@example/angular",
+    "version": "1.0.0",
+    "description": "",
+    "peerDependencies": {
+        "@me/core": "1.0.0"
+    },
+    "dependencies": {
+        "@angular/core": "7.0.0-rc.1",
+        "graphql": "14.0.2"
+    }
+}
