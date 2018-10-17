@@ -22,6 +22,13 @@ export interface PackageJSON {
     [name: string]: string;
   };
   private?: boolean;
+  config?: {
+    wieldo?: {
+      hooks?: {
+        [hook: string]: string;
+      };
+    };
+  };
 }
 
 export class PackageNode {
@@ -53,6 +60,10 @@ export class PackageNode {
 
   public isLocal() {
     return this.local;
+  }
+
+  public getLocation() {
+    return this.location;
   }
 
   public async setVersion(version: string) {

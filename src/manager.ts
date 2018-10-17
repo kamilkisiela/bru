@@ -1,9 +1,10 @@
+import * as semver from 'semver';
 import { join } from 'path';
 import { DepGraph } from 'dependency-graph';
 import { YarnWorkspace, LernaWorkspace, WorkspaceClient } from './workspace';
 import { Parser } from './parser';
 import { PackageNode } from './packages';
-import * as semver from 'semver';
+import { Hooks } from './hooks';
 
 export interface ChangeInfo {
   name: string;
@@ -15,6 +16,7 @@ export interface ChangeInfo {
 export class Manager {
   private workspace!: WorkspaceClient;
   private parser = new Parser();
+  private hooks = new Hooks();
   private graph = new DepGraph<PackageNode>({
     circular: false,
   });
@@ -101,16 +103,28 @@ export class Manager {
     await Promise.all(
       dependants.map(async dependant => {
         const node = await this.getPackage(dependant);
-        const from = await node.versionOfDependency(name);
+        const oldVersion = await node.versionOfDependency(name);
 
-        if (!semver.eq(from, version)) {
+        if (!semver.eq(oldVersion, version)) {
           updated.push({
             name,
             source: dependant,
-            from,
+            from: oldVersion,
             to: version,
           });
           await node.updateDependency(name, version);
+
+          await this.hooks.run(
+            {
+              type: 'version',
+              data: {
+                name,
+                version,
+                oldVersion,
+              },
+            },
+            node.getLocation() as string,
+          );
         }
       }),
     );

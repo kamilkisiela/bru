@@ -6,5 +6,12 @@
         "@example/core": "1.1.0",
         "@angular/core": "7.0.0",
         "graphql": "14.0.2"
+    },
+    "config": {
+        "wieldo": {
+            "hooks": {
+                "version": "./version-hook.js"
+            }
+        }
     }
 }
