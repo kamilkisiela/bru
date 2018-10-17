@@ -8,30 +8,51 @@ const log = console.log;
 
 import { Manager, ChangeInfo } from './manager';
 
-// const root = process.cwd();
-
-// const helpers = {
-//   readPackageJson,
-//   writePackageJson,
-//   getVersionOfPackage,
-//   bumpPackage,
-//   compare,
-// };
-
 program.version('1.0.0');
+
+program
+  .command('integrity [name]')
+  .description('Checks integrity')
+  .action(async name => {
+    log(
+      chalk.blue(
+        'Checking integrity',
+        name ? `of ${chalk.bold(name)} package` : '',
+      ),
+    );
+
+    try {
+      const manager = new Manager();
+      if (name) {
+        await manager.checkIntegrityOf(name);
+      } else {
+        await manager.checkIntegrity();
+      }
+
+      log(chalk.green.bold('All good'));
+    } catch (e) {
+      handleError(e, ['Checking integrity']);
+    }
+  });
 
 program
   .command('update <name> <version>')
   .description('Sets a new version of a package')
-  .action(async (name, versionOrTag) => {
-    log(chalk.blue('Updating', chalk.bold(name)));
+  .option('-f, --force', 'Force setting a new version, skips integrity check')
+  .action(async (name: string, versionOrTag: string, cmd: program.Command) => {
+    log(chalk.blue('Updating', chalk.bold(name), `(trying ${versionOrTag})`));
 
     try {
       const manager = new Manager();
-      const version = semver.valid(versionOrTag)
+      const version = versionOrTag.includes('.')
         ? versionOrTag
         : await manager.fetchVersion(name, versionOrTag);
-      const updated = await manager.setVersion(name, version);
+
+      if (!semver.valid(version)) {
+        throw new Error(`Invalid version: ${version}`);
+      }
+
+      const updated = await manager.setVersion(name, version, cmd.force === true);
 
       listUpdated(updated);
 
@@ -73,36 +94,6 @@ program
     },
   );
 
-program
-  .command('release <name>')
-  .description('Releases a new version of a package')
-  .action((name: string) => {
-    try {
-      throw new Error('Not yet implemented');
-      // log(chalk.blue('Releasing', chalk.bold(name)));
-
-      // const version = getVersionOfPackage(name);
-      // const prerelease = semver.prerelease(version);
-
-      // // runHooks('release', name, version);
-
-      // const withTag = prerelease ? `-- --tag next` : ``;
-
-      // shelljs.exec(`(cd packages/${name} && npm run deploy ${withTag})`);
-
-      // log(
-      //   chalk.green(
-      //     'Released version',
-      //     chalk.bold(version),
-      //     'of',
-      //     chalk.bold(name),
-      //   ),
-      // );
-    } catch (e) {
-      handleError(e, ['Failed to release', chalk.bold(name)]);
-    }
-  });
-
 program.parse(process.argv);
 
 function listUpdated(updated: ChangeInfo[]) {
@@ -121,39 +112,9 @@ function listUpdated(updated: ChangeInfo[]) {
   }
 }
 
-// // Runs hooks on every package
-// function runHooks(type: string, name: string, version: string) {
-//   const container = 'wieldo';
-//   const packages: string[] = fs
-//     .readdirSync(path.resolve(root, 'packages'))
-//     .filter(dir =>
-//       fs.lstatSync(path.resolve(root, 'packages', dir)).isDirectory(),
-//     );
-
-//   packages.forEach(packageName => {
-//     const pkg = JSON.parse(readPackageJson(packageName));
-
-//     if (!pkg[container]) {
-//       return;
-//     }
-
-//     const hooks = pkg[container];
-
-//     if (hooks[type]) {
-//       const fn = eval(
-//         fs.readFileSync(
-//           path.resolve(root, 'packages', packageName, hooks[type]),
-//           { encoding: 'utf-8' },
-//         ),
-//       );
-//       fn(name, version, helpers);
-//     }
-//   });
-// }
-
 function handleError(error: Error, msg: any[]) {
   log('');
-  log(chalk.red(...msg), ':', chalk.red(chalk.italic(error.message)));
+  log(chalk.red(...msg), ':', chalk.red.italic(error.message));
 
   process.exit(1);
 }

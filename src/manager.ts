@@ -19,10 +19,72 @@ export class Manager {
     circular: false,
   });
 
-  async setVersion(name: string, version: string): Promise<ChangeInfo[]> {
+  public async checkIntegrity() {
+    const graph = await this.getGraph();
+    const errors: Error[] = [];
+
+    await Promise.all(
+      graph.overallOrder().map(async name => {
+        try {
+          await this.checkIntegrityOf(name);
+        } catch (e) {
+          errors.push(e.message);
+        }
+      }),
+    );
+
+    if (errors.length) {
+      throw new Error(
+        ['Integrity check failed!', errors.join('\n')].join('\n'),
+      );
+    }
+  }
+
+  public async checkIntegrityOf(name: string) {
+    const dependants = await this.dependantsOf(name);
+
+    const list = await Promise.all(
+      dependants.map(async dependant => {
+        const node = await this.getPackage(dependant);
+        return {
+          name: dependant,
+          version: await node.versionOfDependency(name),
+        };
+      }),
+    );
+
+    const sameVersions = list.every(
+      (node, _, all) => node.version === all[0].version,
+    );
+
+    if (!sameVersions) {
+      throw new Error(
+        [
+          `Package ${name} has multiple versions:`,
+          list.map(({ name, version }) => `${name}: ${version}`).join('\n'),
+        ].join('\n'),
+      );
+    }
+  }
+
+  public async setVersion(
+    name: string,
+    version: string,
+    force = false,
+  ): Promise<ChangeInfo[]> {
     const dependants = await this.dependantsOf(name);
     const requested = await this.getPackage(name);
     const updated: ChangeInfo[] = [];
+
+    try {
+      await this.checkIntegrityOf(name);
+    } catch (e) {
+      if (!force) {
+        throw e;
+      }
+
+      console.log(e);
+    }
 
     if (requested.isLocal()) {
       if (!semver.eq(requested.version, version)) {
@@ -56,13 +118,13 @@ export class Manager {
     return updated;
   }
 
-  async getVersion(name: string): Promise<string> {
+  public async getVersion(name: string): Promise<string> {
     const requested = await this.getPackage(name);
 
     return requested.version;
   }
 
-  async fetchVersion(name: string, tag: string): Promise<string> {
+  public async fetchVersion(name: string, tag: string): Promise<string> {
     const requested = await this.getPackage(name);
 
     return requested.fetchVersion(tag);
@@ -116,7 +178,11 @@ export class Manager {
   private async getPackage(name: string) {
     const graph = await this.getGraph();
 
-    return graph.getNodeData(name);
+    try {
+      return graph.getNodeData(name);
+    } catch (e) {
+      throw new Error(`Couldn't find package ${name}`);
+    }
   }
 
   private async getNodes(): Promise<PackageNode[]> {
@@ -142,58 +208,24 @@ export class Manager {
   }
 
   private createGraph(nodes: PackageNode[]) {
-    nodes.forEach(node => {
+    const depsPerNode = nodes.map(node => {
       this.graph.addNode(node.name, node);
 
-      if (node.dependencies) {
-        for (const name in node.dependencies) {
-          if (node.dependencies.hasOwnProperty(name)) {
-            if (nodes.some(n => n.name === name)) {
-              return;
-            }
-            const version = node.dependencies[name];
+      const deps = node.listOfDependencies();
 
-            this.graph.addNode(
-              name,
-              new PackageNode({ name, version }, null, false),
-            );
-          }
-        }
-      }
+      deps.filter(dep => !nodes.some(n => n.name === dep.name)).forEach(dep => {
+        this.graph.addNode(dep.name, new PackageNode(dep, null, false));
+      });
 
-      if (node.devDependencies) {
-        for (const name in node.devDependencies) {
-          if (node.devDependencies.hasOwnProperty(name)) {
-            if (nodes.some(n => n.name === name)) {
-              return;
-            }
-            const version = node.devDependencies[name];
-
-            this.graph.addNode(
-              name,
-              new PackageNode({ name, version }, null, false),
-            );
-          }
-        }
-      }
+      return deps;
     });
 
-    nodes.forEach(node => {
-      if (node.dependencies) {
-        for (const name in node.dependencies) {
-          if (node.dependencies.hasOwnProperty(name)) {
-            this.graph.addDependency(node.name, name);
-          }
-        }
-      }
+    depsPerNode.forEach((deps, i) => {
+      const name = nodes[i].name;
 
-      if (node.devDependencies) {
-        for (const name in node.devDependencies) {
-          if (node.devDependencies.hasOwnProperty(name)) {
-            this.graph.addDependency(node.name, name);
-          }
-        }
-      }
+      deps.forEach(dep => {
+        this.graph.addDependency(name, dep.name);
+      });
     });
   }
 }

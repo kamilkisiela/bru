@@ -41,7 +41,11 @@ export class PackageNode {
   private local: boolean;
   private parser: Parser = new Parser();
 
-  constructor(json: PackageJSON, location: string | null, isLocal: boolean = false) {
+  constructor(
+    json: PackageJSON,
+    location: string | null,
+    isLocal: boolean = false,
+  ) {
     this.location = location;
     this.local = isLocal;
     this.init(json);
@@ -53,31 +57,41 @@ export class PackageNode {
 
   public async setVersion(version: string) {
     if (!semver.valid(version)) {
-      throw new Error(`Trying to set an invalid version ${version} for ${this.name} package`);
+      throw new Error(
+        `Trying to set an invalid version ${version} for ${this.name} package`,
+      );
     }
 
-    const updated = await this.parser.updateJSON(resolve(process.cwd(), this.location!), pkg => {
-      pkg.version = version;
-    });
+    const updated = await this.parser.updateJSON(
+      resolve(process.cwd(), this.location!),
+      pkg => {
+        pkg.version = version;
+      },
+    );
 
     this.init(updated);
   }
 
   public async updateDependency(name: string, version: string) {
     if (!semver.valid(version)) {
-      throw new Error(`Trying to update ${name} to an invalid version: ${version}`);
+      throw new Error(
+        `Trying to update ${name} to an invalid version: ${version}`,
+      );
     }
     // for devDep and dep (should handle peerDep in near future)
     if (this.isLocal) {
-      const updated = await this.parser.updateJSON(resolve(process.cwd(), this.location!), pkg => {
-        if (pkg.dependencies && pkg.dependencies[name]) {
-          pkg.dependencies[name] = version;
-        }
+      const updated = await this.parser.updateJSON(
+        resolve(process.cwd(), this.location!),
+        pkg => {
+          if (pkg.dependencies && pkg.dependencies[name]) {
+            pkg.dependencies[name] = version;
+          }
 
-        if (pkg.devDependencies && pkg.devDependencies[name]) {
-          pkg.devDependencies[name] = version;
-        }
-      });
+          if (pkg.devDependencies && pkg.devDependencies[name]) {
+            pkg.devDependencies[name] = version;
+          }
+        },
+      );
 
       this.init(updated);
     }
@@ -90,15 +104,44 @@ export class PackageNode {
   }
 
   public async versionOfDependency(name: string): Promise<string> {
+    let direct: string | undefined;
+    let dev: string | undefined;
+
     if (this.dependencies && this.dependencies[name]) {
-      return this.dependencies[name];
+      direct = this.dependencies[name];
     }
 
     if (this.devDependencies && this.devDependencies[name]) {
-      return this.devDependencies[name];
+      dev = this.devDependencies[name];
     }
 
-    throw new Error(`${this.name} has no dependency of ${name}`);
+    if (direct && dev) {
+      throw new Error(
+        `${this.name} has both direct and dev dependencies of ${name}`,
+      );
+    }
+
+    if (!direct && !dev) {
+      throw new Error(`${this.name} has no dependency of ${name}`);
+    }
+
+    return (direct || dev) as string;
+  }
+
+  public listOfDependencies(): {
+    name: string;
+    version: string;
+  }[] {
+    const map: {
+      [name: string]: string;
+    } = {
+      ...this.devDependencies,
+      ...this.dependencies,
+    };
+    return Object.keys(map).map(name => ({
+      name,
+      version: map[name],
+    }));
   }
 
   private init(json: PackageJSON) {
