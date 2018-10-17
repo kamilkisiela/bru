@@ -100,11 +100,17 @@ program
 
 program.parse(process.argv);
 
-const subCmd: string | undefined = program.args[0];
-const cmds = (program.commands as any[]).map(c => c._name);
+const subCmd: string | undefined = process.argv[2];
+const cmds = (program.commands as any[]).map(c => {
+  return c._name;
+});
 
 if (cmds.indexOf(subCmd) === -1) {
-  program.help((info) => `\nCommand "${subCmd || ''}" not found\n\n${info}`);
+  program.help(
+    info =>
+      `\nCommand "${process.argv.slice(2).join(' ') ||
+        ''}" not found\n\n${info}`,
+  );
 }
 
 function printUpdates(updates: ChangeInfo[]) {
