@@ -1,4 +1,7 @@
 import { resolve } from 'path';
+import * as JSON5 from 'json5';
+import * as semver from 'semver';
+import execa = require('execa');
 import { Parser } from './parser';
 
 export interface Dependency {
@@ -44,24 +47,26 @@ export class PackageNode {
     this.init(json);
   }
 
-  init(json: PackageJSON) {
-    this.name = json.name;
-    this.version = json.version;
-    this.dependencies = json.dependencies;
-    this.devDependencies = json.devDependencies;
-    this.peerDependencies = json.peerDependencies;
-    this.private = !!json.private;
-  }
-
-  getLocation() {
-    return this.location;
-  }
-
-  isLocal() {
+  public isLocal() {
     return this.local;
   }
 
-  async updatePackage(name: string, version: string) {
+  public async setVersion(version: string) {
+    if (!semver.valid(version)) {
+      throw new Error(`Trying to set an invalid version ${version} for ${this.name} package`);
+    }
+
+    const updated = await this.parser.updateJSON(resolve(process.cwd(), this.location!), pkg => {
+      pkg.version = version;
+    });
+
+    this.init(updated);
+  }
+
+  public async updateDependency(name: string, version: string) {
+    if (!semver.valid(version)) {
+      throw new Error(`Trying to update ${name} to an invalid version: ${version}`);
+    }
     // for devDep and dep (should handle peerDep in near future)
     if (this.isLocal) {
       const updated = await this.parser.updateJSON(resolve(process.cwd(), this.location!), pkg => {
@@ -75,6 +80,42 @@ export class PackageNode {
       });
 
       this.init(updated);
+    }
+  }
+
+  public async fetchVersion(tag: string = 'latest'): Promise<string> {
+    const info = await this.info();
+
+    return info['dist-tags'][tag];
+  }
+
+  public async versionOfDependency(name: string): Promise<string> {
+    if (this.dependencies && this.dependencies[name]) {
+      return this.dependencies[name];
+    }
+
+    if (this.devDependencies && this.devDependencies[name]) {
+      return this.devDependencies[name];
+    }
+
+    throw new Error(`${this.name} has no dependency of ${name}`);
+  }
+
+  private init(json: PackageJSON) {
+    this.name = json.name;
+    this.version = json.version;
+    this.dependencies = json.dependencies;
+    this.devDependencies = json.devDependencies;
+    this.peerDependencies = json.peerDependencies;
+    this.private = !!json.private;
+  }
+
+  private async info() {
+    try {
+      const stdout = await execa.stdout('npm', ['info', this.name]);
+      return JSON5.parse(stdout.trim());
+    } catch (e) {
+      throw new Error(`Failed to get info of ${this.name}: ${e}`);
     }
   }
 }

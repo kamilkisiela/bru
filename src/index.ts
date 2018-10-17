@@ -1,72 +1,41 @@
 #!/usr/bin/env node
 
 import * as program from 'commander';
-import * as fs from 'fs';
-import * as path from 'path';
 import * as semver from 'semver';
-import * as shelljs from 'shelljs';
 import chalk from 'chalk';
 
 const log = console.log;
 
-import {
-  readPackageJson,
-  writePackageJson,
-  getVersionOfPackage,
-  bumpPackage,
-  compare,
-} from './helpers';
+import { Manager, ChangeInfo } from './manager';
 
-import { Manager } from './manager';
+// const root = process.cwd();
 
-const root = process.cwd();
-
-const helpers = {
-  readPackageJson,
-  writePackageJson,
-  getVersionOfPackage,
-  bumpPackage,
-  compare,
-};
+// const helpers = {
+//   readPackageJson,
+//   writePackageJson,
+//   getVersionOfPackage,
+//   bumpPackage,
+//   compare,
+// };
 
 program.version('1.0.0');
 
 program
-  .command('info <name>')
-  .description('Info about packages')
-  .action(async () => {
-    log(chalk.blue('Getting info'));
-
-    try {
-      const manager = new Manager();
-      const pkg = await manager.info();
-
-      console.log(pkg);
-    } catch (e) {
-      handleError(e, ['Failed to get info']);
-    }
-  });
-
-program
-  .command('version <name> <version>')
+  .command('update <name> <version>')
   .description('Sets a new version of a package')
-  .action(async (name, version) => {
+  .action(async (name, versionOrTag) => {
     log(chalk.blue('Updating', chalk.bold(name)));
 
     try {
-      // setVersion(name, version);
       const manager = new Manager();
-      await manager.setVersion(name, version);
-      
-      log('');
-      log(
-        chalk.green(
-          'Updated',
-          chalk.bold(name),
-          'to',
-          chalk.bold(version),
-        ),
-      );
+      const version = semver.valid(versionOrTag)
+        ? versionOrTag
+        : await manager.fetchVersion(name, versionOrTag);
+      const updated = await manager.setVersion(name, version);
+
+      listUpdated(updated);
+
+      log(chalk.green('Updated', chalk.bold(name), 'to', chalk.bold(version)));
     } catch (e) {
       handleError(e, ['Failed to update', chalk.bold(name)]);
     }
@@ -76,63 +45,59 @@ program
   .command('bump <name> <type>')
   .description('Bumps a version of a package')
   .option('-i, --preid <preid>', 'type of prerelease - x.x.x-[PREID].x')
-  .action((name: string, type: semver.ReleaseType, cmd: program.Command) => {
-    log(
-      chalk.blue('Bumping', chalk.bold(name), 'by', chalk.bold(type)),
-    );
+  .action(
+    async (name: string, type: semver.ReleaseType, cmd: program.Command) => {
+      log(chalk.blue('Bumping', chalk.bold(name), 'by', chalk.bold(type)));
 
-    try {
-      const version = semver.inc(
-        getVersionOfPackage(name),
-        type,
-        cmd.preid || 'beta',
-      );
+      try {
+        const manager = new Manager();
 
-      if (!version) {
-        throw new Error(`Failed to bump version of ${name}`);
+        const version = semver.inc(
+          await manager.getVersion(name),
+          type,
+          cmd.preid || 'beta',
+        );
+
+        if (!version) {
+          throw new Error(`Failed to bump version of ${name}`);
+        }
+
+        const updated = await manager.setVersion(name, version);
+
+        listUpdated(updated);
+
+        log(chalk.green('Bumped', chalk.bold(name), 'to', chalk.bold(version)));
+      } catch (e) {
+        handleError(e, ['Failed to bump', chalk.bold(name)]);
       }
-
-      setVersion(name, version);
-
-      log('');
-      log(
-        chalk.green(
-          'Bumped',
-          chalk.bold(name),
-          'to',
-          chalk.bold(version),
-        ),
-      );
-    } catch (e) {
-      handleError(e, ['Failed to bump', chalk.bold(name)]);
-    }
-  });
+    },
+  );
 
 program
   .command('release <name>')
   .description('Releases a new version of a package')
   .action((name: string) => {
     try {
-      log(chalk.blue('Releasing', chalk.bold(name)));
+      throw new Error('Not yet implemented');
+      // log(chalk.blue('Releasing', chalk.bold(name)));
 
-      const version = getVersionOfPackage(name);
-      const prerelease = semver.prerelease(version);
+      // const version = getVersionOfPackage(name);
+      // const prerelease = semver.prerelease(version);
 
-      runHooks('release', name, version);
+      // // runHooks('release', name, version);
 
-      const withTag = prerelease ? `-- --tag next` : ``;
+      // const withTag = prerelease ? `-- --tag next` : ``;
 
-      shelljs.exec(`(cd packages/${name} && npm run deploy ${withTag})`);
+      // shelljs.exec(`(cd packages/${name} && npm run deploy ${withTag})`);
 
-      log('');
-      log(
-        chalk.green(
-          'Released version',
-          chalk.bold(version),
-          'of',
-          chalk.bold(name),
-        ),
-      );
+      // log(
+      //   chalk.green(
+      //     'Released version',
+      //     chalk.bold(version),
+      //     'of',
+      //     chalk.bold(name),
+      //   ),
+      // );
     } catch (e) {
       handleError(e, ['Failed to release', chalk.bold(name)]);
     }
@@ -140,61 +105,51 @@ program
 
 program.parse(process.argv);
 
-// Changes a version of a package
-function setVersion(name: string, version: string) {
-  log('');
-  log('Current version:', chalk.bold(getVersionOfPackage(name)));
-  log('Requested version:', chalk.bold(version));
-
-  if (!semver.valid(version)) {
-    throw new Error('Invalid version');
-  }
-
-  if (!semver.gt(version, getVersionOfPackage(name))) {
-    throw new Error('Version should be greater than the current one');
-  }
-
-  const pkg = readPackageJson(name);
-  const findVersion = /"version"\:\s*"[^"]+"/;
-
-  if (!findVersion.test(pkg)) {
-    throw new Error('Request package.json does not have "version" field');
-  }
-
-  runHooks('version', name, version);
-
-  writePackageJson(name, pkg.replace(findVersion, `"version": "${version}"`));
-}
-
-// Runs hooks on every package
-function runHooks(type: string, name: string, version: string) {
-  const container = 'wieldo';
-  const packages: string[] = fs
-    .readdirSync(path.resolve(root, 'packages'))
-    .filter(dir =>
-      fs.lstatSync(path.resolve(root, 'packages', dir)).isDirectory(),
+function listUpdated(updated: ChangeInfo[]) {
+  if (updated.length) {
+    updated.forEach(change =>
+      log(
+        chalk.bold(change.source),
+        ':',
+        change.from,
+        ' => ',
+        chalk.bold(change.to),
+      ),
     );
-
-  packages.forEach(packageName => {
-    const pkg = JSON.parse(readPackageJson(packageName));
-
-    if (!pkg[container]) {
-      return;
-    }
-
-    const hooks = pkg[container];
-
-    if (hooks[type]) {
-      const fn = eval(
-        fs.readFileSync(
-          path.resolve(root, 'packages', packageName, hooks[type]),
-          { encoding: 'utf-8' },
-        ),
-      );
-      fn(name, version, helpers);
-    }
-  });
+  } else {
+    log('No changes');
+  }
 }
+
+// // Runs hooks on every package
+// function runHooks(type: string, name: string, version: string) {
+//   const container = 'wieldo';
+//   const packages: string[] = fs
+//     .readdirSync(path.resolve(root, 'packages'))
+//     .filter(dir =>
+//       fs.lstatSync(path.resolve(root, 'packages', dir)).isDirectory(),
+//     );
+
+//   packages.forEach(packageName => {
+//     const pkg = JSON.parse(readPackageJson(packageName));
+
+//     if (!pkg[container]) {
+//       return;
+//     }
+
+//     const hooks = pkg[container];
+
+//     if (hooks[type]) {
+//       const fn = eval(
+//         fs.readFileSync(
+//           path.resolve(root, 'packages', packageName, hooks[type]),
+//           { encoding: 'utf-8' },
+//         ),
+//       );
+//       fn(name, version, helpers);
+//     }
+//   });
+// }
 
 function handleError(error: Error, msg: any[]) {
   log('');

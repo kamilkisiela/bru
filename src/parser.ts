@@ -1,23 +1,20 @@
 import { readFile, writeFile } from 'fs';
 import immer from 'immer';
+const detectIndent = require('detect-indent');
 import { PackageJSON } from './packages';
 
 export class Parser {
   async parse(location: string): Promise<PackageJSON> {
-    const json = await this.readJSON(location);
+    const json = JSON.parse(await this.readJSON(location));
 
     return {
-      name: json.name,
-      version: json.version,
+      ...json,
       private: !!json.private,
-      peerDependencies: json.peerDependencies,
-      dependencies: json.dependencies,
-      devDependencies: json.devDependencies,
     };
   }
 
-  async readJSON(filepath: string): Promise<any> {
-    return new Promise((resolve, reject) => {
+  async readJSON(filepath: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
       readFile(
         filepath,
         {
@@ -27,7 +24,7 @@ export class Parser {
           if (err) {
             reject(err);
           } else {
-            resolve(JSON.parse(data));
+            resolve(data);
           }
         },
       );
@@ -36,26 +33,33 @@ export class Parser {
 
   async updateJSON(filepath: string, updateFn: (json: any) => any) {
     const content = await this.readJSON(filepath);
-    const updated = immer(content, updateFn);
-    
-    await this.writeJSON(filepath, updated);
+    const { amount } = detectIndent(content);
+    const json = JSON.parse(content);
+    const updated = immer(json, updateFn);
+
+    await this.writeJSON(filepath, updated, amount);
 
     return updated;
   }
 
-  async writeJSON(filepath: string, json: any): Promise<void> {
+  async writeJSON(filepath: string, json: any, ident = 2): Promise<void> {
     await new Promise((resolve, reject) => {
-      const content = JSON.stringify(json, null, 4);
+      const content = JSON.stringify(json, null, ident);
 
-      writeFile(filepath, content, {
-        encoding: 'utf-8'
-      }, (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      })
+      writeFile(
+        filepath,
+        content,
+        {
+          encoding: 'utf-8',
+        },
+        err => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve();
+          }
+        },
+      );
     });
   }
 }
