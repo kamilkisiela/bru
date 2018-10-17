@@ -52,9 +52,13 @@ program
         throw new Error(`Invalid version: ${version}`);
       }
 
-      const updated = await manager.setVersion(name, version, cmd.force === true);
+      const updates = await manager.setVersion(
+        name,
+        version,
+        cmd.force === true,
+      );
 
-      listUpdated(updated);
+      printUpdates(updates);
 
       log(chalk.green('Updated', chalk.bold(name), 'to', chalk.bold(version)));
     } catch (e) {
@@ -83,9 +87,9 @@ program
           throw new Error(`Failed to bump version of ${name}`);
         }
 
-        const updated = await manager.setVersion(name, version);
+        const updates = await manager.setVersion(name, version);
 
-        listUpdated(updated);
+        printUpdates(updates);
 
         log(chalk.green('Bumped', chalk.bold(name), 'to', chalk.bold(version)));
       } catch (e) {
@@ -96,9 +100,16 @@ program
 
 program.parse(process.argv);
 
-function listUpdated(updated: ChangeInfo[]) {
-  if (updated.length) {
-    updated.forEach(change =>
+const subCmd: string | undefined = program.args[0];
+const cmds = (program.commands as any[]).map(c => c._name);
+
+if (cmds.indexOf(subCmd) === -1) {
+  program.help((info) => `\nCommand "${subCmd || ''}" not found\n\n${info}`);
+}
+
+function printUpdates(updates: ChangeInfo[]) {
+  if (updates.length) {
+    updates.forEach(change =>
       log(
         chalk.bold(change.source),
         ':',
