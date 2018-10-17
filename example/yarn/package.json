@@ -9,5 +9,7 @@
     "dependencies": {
         "graphql": "14.0.2"
     },
-    "workspaces": ["./packages/*"]
+    "workspaces": [
+        "./packages/*"
+    ]
 }
