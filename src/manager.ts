@@ -82,7 +82,11 @@ export class Manager {
       await this.checkIntegrityOf(name);
     } catch (e) {
       if (!force) {
-        throw e;
+        throw new Error(
+          [e, '', 'You can use --force flag to force setting new version'].join(
+            '\n',
+          ),
+        );
       }
 
       console.log(e);

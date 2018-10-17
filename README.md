@@ -4,9 +4,9 @@ Manages relations between packages in monorepo.
 
 ## API
 
-### `wieldo update <name> <version>`
+### `wieldo update <name> <version or tag>`
 
-Sets a new version of a package
+Sets a new version of a package (specific or based on provided dist tag)
 
 ### `wieldo bump <name> <type>`
 
