@@ -169,6 +169,14 @@ export class Manager {
     return this.workspace;
   }
 
+  async list(): Promise<PackageNode[]> {
+    const graph = await this.getGraph();
+
+    return Promise.all(
+      graph.overallOrder().map(name => graph.getNodeData(name)),
+    );
+  }
+
   private async whichWorkspace(): Promise<string> {
     const pkg: any = await this.parser.parse('package.json');
 

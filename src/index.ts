@@ -81,6 +81,40 @@ program
   });
 
 program
+  .command('all-version [tag]')
+  .alias('av')
+  .description('Sets a new version for every package')
+  .option('-f, --force', 'Force setting a new version, skips integrity check')
+  .action(async (tag: string, cmd: program.Command) => {
+    log(
+      chalk.blue('Updating', chalk.bold('all packages'), `(dist-tag: ${tag})`),
+    );
+
+    const manager = new Manager();
+    const list = await manager.list();
+
+    await Promise.all(
+      list.map(async node => {
+        if (node.isLocal()) {
+          return;
+        }
+
+        try {
+          const version = await manager.fetchVersion(node.name, tag);
+
+          await manager.setVersion(node.name, version, cmd.force === true);
+
+          log(
+            chalk.green('Updated', chalk.bold(node.name), 'to', chalk.bold(version)),
+          );
+        } catch (e) {
+          handleError(e, ['Failed to update', chalk.bold(node.name)]);
+        }
+      }),
+    );
+  });
+
+program
   .command('bump <name> <type>')
   .alias('b')
   .description('Bumps a version of a package')
