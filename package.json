@@ -4,6 +4,9 @@
   "description": "Manages relations between packages in monorepo",
   "main": "build/index.js",
   "typings": "build/index.d.ts",
+  "bin": {
+    "wieldo": "./build/index.js"
+  },
   "repository": "git@github.com:kamilkisiela/wieldo.git",
   "author": "Kamil Kisiela <kamil.kisiela@gmail.com>",
   "license": "MIT",
@@ -13,9 +16,6 @@
     "tool",
     "packages"
   ],
-  "bin": {
-    "wieldo": "./build/index.js"
-  },
   "scripts": {
     "build": "tsc",
     "prerelease": "yarn build",

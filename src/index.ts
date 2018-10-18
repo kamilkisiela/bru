@@ -36,7 +36,7 @@ program
   });
 
 program
-  .command('update <name> <version>')
+  .command('version <name> <version>')
   .description('Sets a new version of a package')
   .option('-f, --force', 'Force setting a new version, skips integrity check')
   .action(async (name: string, versionOrTag: string, cmd: program.Command) => {
