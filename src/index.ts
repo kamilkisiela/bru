@@ -36,38 +36,53 @@ program
   });
 
 program
-  .command('version <name> <version>')
-  .description('Sets a new version of a package')
+  .command('version <name> [version]')
+  .alias('v')
+  .description('Sets or gets a version of a package')
   .option('-f, --force', 'Force setting a new version, skips integrity check')
   .action(async (name: string, versionOrTag: string, cmd: program.Command) => {
-    log(chalk.blue('Updating', chalk.bold(name), `(trying ${versionOrTag})`));
+    if (typeof versionOrTag === 'string') {
+      log(chalk.blue('Updating', chalk.bold(name), `(trying ${versionOrTag})`));
 
-    try {
-      const manager = new Manager();
-      const version = versionOrTag.includes('.')
-        ? versionOrTag
-        : await manager.fetchVersion(name, versionOrTag);
+      try {
+        const manager = new Manager();
+        const version = versionOrTag.includes('.')
+          ? versionOrTag
+          : await manager.fetchVersion(name, versionOrTag);
 
-      if (!semver.valid(version)) {
-        throw new Error(`Invalid version: ${version}`);
+        if (!semver.valid(version)) {
+          throw new Error(`Invalid version: ${version}`);
+        }
+
+        const updates = await manager.setVersion(
+          name,
+          version,
+          cmd.force === true,
+        );
+
+        printUpdates(updates);
+
+        log(
+          chalk.green('Updated', chalk.bold(name), 'to', chalk.bold(version)),
+        );
+      } catch (e) {
+        handleError(e, ['Failed to update', chalk.bold(name)]);
       }
+    } else {
+      try {
+        const manager = new Manager();
+        const version = await manager.getVersion(name);
 
-      const updates = await manager.setVersion(
-        name,
-        version,
-        cmd.force === true,
-      );
-
-      printUpdates(updates);
-
-      log(chalk.green('Updated', chalk.bold(name), 'to', chalk.bold(version)));
-    } catch (e) {
-      handleError(e, ['Failed to update', chalk.bold(name)]);
+        log(chalk.green(chalk.bold(name), 'is', chalk.bold(version)));
+      } catch (e) {
+        handleError(e, ['Failed to check version', chalk.bold(name)]);
+      }
     }
   });
 
 program
   .command('bump <name> <type>')
+  .alias('b')
   .description('Bumps a version of a package')
   .option('-i, --preid <preid>', 'type of prerelease - x.x.x-[PREID].x')
   .action(
@@ -101,11 +116,9 @@ program
 program.parse(process.argv);
 
 const subCmd: string | undefined = process.argv[2];
-const cmds = (program.commands as any[]).map(c => {
-  return c._name;
-});
+const cmds = (program.commands as any[]).map(c => [c._name, c._alias]);
 
-if (cmds.indexOf(subCmd) === -1) {
+if (cmds.every(o => o.indexOf(subCmd) === -1)) {
   program.help(
     info =>
       `\nCommand "${process.argv.slice(2).join(' ') ||
