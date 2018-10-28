@@ -36,6 +36,37 @@ program
   });
 
 program
+  .command('add <name> [versionOrTag]')
+  .description('Adds a new package')
+  .option('-D, --save-dev', 'Adds as dev dependency')
+  .option('-R, --root', 'Saves in the root')
+  .option('-P, --package <name>', 'Saves in a package')
+  .action(
+    async (
+      name: string,
+      versionOrTag: string | undefined,
+      cmd: program.Command,
+    ) => {
+      log(chalk.blue('Adding', chalk.bold(name)));
+
+      try {
+        const manager = new Manager();
+
+        await manager.add({
+          name,
+          versionOrTag,
+          type: cmd['save-dev'] ? 'dev' : 'direct',
+          space: cmd.root ? 'root' : cmd.package,
+        });
+
+        log(chalk.green('Added', chalk.bold(name)));
+      } catch (e) {
+        handleError(e, ['Failed to add', chalk.bold(name)]);
+      }
+    },
+  );
+
+program
   .command('version <name> [version]')
   .alias('v')
   .description('Sets or gets a version of a package')
@@ -105,7 +136,12 @@ program
           await manager.setVersion(node.name, version, cmd.force === true);
 
           log(
-            chalk.green('Updated', chalk.bold(node.name), 'to', chalk.bold(version)),
+            chalk.green(
+              'Updated',
+              chalk.bold(node.name),
+              'to',
+              chalk.bold(version),
+            ),
           );
         } catch (e) {
           handleError(e, ['Failed to update', chalk.bold(node.name)]);

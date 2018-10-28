@@ -1,4 +1,7 @@
 node_modules/
 build/
 yarn.lock
+yarn-error.log
 packages-lock.jcon
+**/*/yarn-error.log
+**/*/yarn.lock

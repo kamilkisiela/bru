@@ -7,8 +7,16 @@ type Info = {
   };
 };
 
+interface AddInfo {
+  space: string | 'root';
+  name: string;
+  versionOrTag?: string;
+  type: 'dev' | 'direct';
+}
+
 export interface WorkspaceClient {
   info(): Promise<Info>;
+  add(info: AddInfo): Promise<void>;
 }
 
 type YarnInfo = {
@@ -27,6 +35,49 @@ export class YarnWorkspace implements WorkspaceClient {
 
     return info;
   }
+
+  async add(info: AddInfo) {
+    if (info.space === 'root') {
+      this.addInRoot(info);
+    } else {
+      this.addInWorkspace(info);
+    }
+  }
+
+  private async addInWorkspace(info: AddInfo) {
+    const cmd = [
+      'workspace',
+      info.space,
+      'add',
+      ...this.translateAdd(info.type, info.name, info.versionOrTag),
+    ];
+    
+    await execa('yarn', cmd);
+  }
+
+  private async addInRoot(info: AddInfo) {
+    const cmd = [
+      'add',
+      ...this.translateAdd(info.type, info.name, info.versionOrTag),
+      '-W',
+    ];
+
+    await execa('yarn', cmd);
+  }
+
+  private translateAdd(
+    type: string,
+    name: string,
+    versionOrTag?: string,
+  ): string[] {
+    const pkg = versionOrTag ? `${name}@${versionOrTag}` : name;
+
+    if (type === 'dev') {
+      return ['-D', pkg];
+    }
+
+    return [pkg];
+  }
 }
 
 export class LernaWorkspace implements WorkspaceClient {
@@ -41,5 +92,9 @@ export class LernaWorkspace implements WorkspaceClient {
     });
 
     return info;
+  }
+
+  async add() {
+    throw new Error('Not yet implemented');
   }
 }

@@ -69,6 +69,28 @@ export class Manager {
     }
   }
 
+  public async add({
+    name,
+    versionOrTag,
+    space,
+    type,
+  }: {
+    name: string;
+    versionOrTag?: string;
+    space?: string;
+    type: 'dev' | 'direct';
+  }) {
+    const workspace = await this.getWorkspace();
+
+    await workspace.add({
+      name,
+      versionOrTag,
+      space: space || 'root',
+      type,
+    });
+    await this.checkIntegrity();
+  }
+
   public async setVersion(
     name: string,
     version: string,
