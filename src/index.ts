@@ -112,13 +112,13 @@ program
   });
 
 program
-  .command('all-version [tag]')
+  .command('latest')
   .alias('av')
-  .description('Sets a new version for every package')
+  .description('Sets a latest version for every package')
   .option('-f, --force', 'Force setting a new version, skips integrity check')
-  .action(async (tag: string, cmd: program.Command) => {
+  .action(async (cmd: program.Command) => {
     log(
-      chalk.blue('Updating', chalk.bold('all packages'), `(dist-tag: ${tag})`),
+      chalk.blue('Updating', chalk.bold('all packages')),
     );
 
     const manager = new Manager();
@@ -131,7 +131,7 @@ program
         }
 
         try {
-          const version = await manager.fetchVersion(node.name, tag);
+          const version = await manager.fetchVersion(node.name, 'latest');
 
           await manager.setVersion(node.name, version, cmd.force === true);
 

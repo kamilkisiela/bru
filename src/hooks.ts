@@ -13,9 +13,9 @@ export class Hooks {
     const pkg = await this.parser.parse(location);
     const runner =
       pkg.config &&
-      pkg.config.wieldo &&
-      pkg.config.wieldo.hooks &&
-      pkg.config.wieldo.hooks[info.type];
+      pkg.config.bru &&
+      pkg.config.bru.hooks &&
+      pkg.config.bru.hooks[info.type];
 
     if (!runner) {
       return;

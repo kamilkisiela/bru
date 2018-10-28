@@ -23,7 +23,7 @@ export interface PackageJSON {
   };
   private?: boolean;
   config?: {
-    wieldo?: {
+    bru?: {
       hooks?: {
         [hook: string]: string;
       };

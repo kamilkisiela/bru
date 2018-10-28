@@ -8,7 +8,7 @@
         "graphql": "14.0.2"
     },
     "config": {
-        "wieldo": {
+        "bru": {
             "hooks": {
                 "version": "./version-hook.js"
             }
