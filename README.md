@@ -1,6 +1,8 @@
 # bru
 
-Bru 🤵 helps you manage monorepos
+Bru 🤵 helps you manage monorepos.
+
+Try it out, it's lekker bru!
 
 [![GitHub license](https://img.shields.io/badge/license-MIT-lightgrey.svg?maxAge=2592000)](https://raw.githubusercontent.com/kamilkisiela/bru/master/LICENSE)
 [![npm](https://img.shields.io/npm/v/bru.svg)](https://www.npmjs.com/package/bru)
