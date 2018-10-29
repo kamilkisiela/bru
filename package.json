@@ -1,7 +1,7 @@
 {
   "name": "bru",
-  "version": "1.0.0",
-  "description": "Friend to help you manage relations between packages in monorepo",
+  "version": "1.1.0",
+  "description": "Bru 🤵 helps you manage monorepos",
   "main": "build/index.js",
   "typings": "build/index.d.ts",
   "bin": {
@@ -12,9 +12,14 @@
   "license": "MIT",
   "private": false,
   "keywords": [
+    "bru",
+    "cli",
     "monorepo",
     "tool",
-    "packages"
+    "packages",
+    "lerna",
+    "yarn",
+    "multi-package"
   ],
   "scripts": {
     "build": "tsc",

@@ -3,15 +3,24 @@
 import * as program from 'commander';
 import * as semver from 'semver';
 import chalk from 'chalk';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
 const log = console.log;
 
 import { Manager, ChangeInfo } from './manager';
 
-program.version('1.0.0');
+const pkg: any = JSON.parse(
+  readFileSync(resolve(process.cwd(), 'package.json'), {
+    encoding: 'utf-8',
+  }),
+);
+
+program.version(pkg.version);
 
 program
-  .command('integrity [name]')
+  .command('check [name]')
+  .alias('c')
   .description('Checks integrity')
   .action(async name => {
     log(
@@ -67,87 +76,50 @@ program
   );
 
 program
-  .command('version <name> [version]')
-  .alias('v')
-  .description('Sets or gets a version of a package')
+  .command('set <name> <version>')
+  .alias('s')
+  .description('Sets a version of a package')
   .option('-f, --force', 'Force setting a new version, skips integrity check')
   .action(async (name: string, versionOrTag: string, cmd: program.Command) => {
-    if (typeof versionOrTag === 'string') {
-      log(chalk.blue('Updating', chalk.bold(name), `(trying ${versionOrTag})`));
+    log(chalk.blue('Updating', chalk.bold(name), `(trying ${versionOrTag})`));
 
-      try {
-        const manager = new Manager();
-        const version = versionOrTag.includes('.')
-          ? versionOrTag
-          : await manager.fetchVersion(name, versionOrTag);
+    try {
+      const manager = new Manager();
+      const version = versionOrTag.includes('.')
+        ? versionOrTag
+        : await manager.fetchVersion(name, versionOrTag);
 
-        if (!semver.valid(version)) {
-          throw new Error(`Invalid version: ${version}`);
-        }
-
-        const updates = await manager.setVersion(
-          name,
-          version,
-          cmd.force === true,
-        );
-
-        printUpdates(updates);
-
-        log(
-          chalk.green('Updated', chalk.bold(name), 'to', chalk.bold(version)),
-        );
-      } catch (e) {
-        handleError(e, ['Failed to update', chalk.bold(name)]);
+      if (!semver.valid(version)) {
+        throw new Error(`Invalid version: ${version}`);
       }
-    } else {
-      try {
-        const manager = new Manager();
-        const version = await manager.getVersion(name);
 
-        log(chalk.green(chalk.bold(name), 'is', chalk.bold(version)));
-      } catch (e) {
-        handleError(e, ['Failed to check version', chalk.bold(name)]);
-      }
+      const updates = await manager.setVersion(
+        name,
+        version,
+        cmd.force === true,
+      );
+
+      printUpdates(updates);
+
+      log(chalk.green('Updated', chalk.bold(name), 'to', chalk.bold(version)));
+    } catch (e) {
+      handleError(e, ['Failed to update', chalk.bold(name)]);
     }
   });
 
 program
-  .command('latest')
-  .alias('av')
-  .description('Sets a latest version for every package')
-  .option('-f, --force', 'Force setting a new version, skips integrity check')
-  .action(async (cmd: program.Command) => {
-    log(
-      chalk.blue('Updating', chalk.bold('all packages')),
-    );
+  .command('get <name>')
+  .alias('g')
+  .description('Gets a version of a package')
+  .action(async (name: string) => {
+    try {
+      const manager = new Manager();
+      const version = await manager.getVersion(name);
 
-    const manager = new Manager();
-    const list = await manager.list();
-
-    await Promise.all(
-      list.map(async node => {
-        if (node.isLocal()) {
-          return;
-        }
-
-        try {
-          const version = await manager.fetchVersion(node.name, 'latest');
-
-          await manager.setVersion(node.name, version, cmd.force === true);
-
-          log(
-            chalk.green(
-              'Updated',
-              chalk.bold(node.name),
-              'to',
-              chalk.bold(version),
-            ),
-          );
-        } catch (e) {
-          handleError(e, ['Failed to update', chalk.bold(node.name)]);
-        }
-      }),
-    );
+      log(chalk.green(chalk.bold(name), 'is', chalk.bold(version)));
+    } catch (e) {
+      handleError(e, ['Failed to get a version', chalk.bold(name)]);
+    }
   });
 
 program
