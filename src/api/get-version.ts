@@ -15,7 +15,6 @@ export async function getVersionOf({
     throw new Error(`Module ${name} is not available in your project`);
   }
 
-  // optimize that
   const hasIntegrity = await checkIntegrity({
     name,
     registry,
