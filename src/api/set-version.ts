@@ -21,7 +21,7 @@ export async function bumpVersionOf({
   const version = semver.inc(currentVersion, type);
 
   if (!version) {
-    throw new Error(`Failed to bump ${module} by ${type}`);
+    throw new Error(`Failed to bump ${module} to ${type}`);
   }
 
   return setVersionOf({
