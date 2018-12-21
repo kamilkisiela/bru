@@ -1,5 +1,7 @@
 import { resolve } from 'path';
 import { setCWD } from '../../src/consts';
+import { scan } from '../../src/scanner';
+import { createRegistry } from '../../src/registry';
 import { checkIntegrity, hasIntegrity } from '../../src/api/integrity';
 
 describe('integrity', () => {
@@ -9,8 +11,14 @@ describe('integrity', () => {
 
       setCWD(cwd);
 
+      const locations = await scan();
+      const registry = await createRegistry(locations);
+
       // integrity of a single package
-      const graphqlResult = await checkIntegrity('graphql');
+      const graphqlResult = await checkIntegrity({
+        name: 'graphql',
+        registry,
+      });
 
       expect(graphqlResult.graphql.integrity).toEqual(true);
       expect(graphqlResult.graphql.parents).toHaveProperty('@example/core');
@@ -22,12 +30,18 @@ describe('integrity', () => {
       expect(hasIntegrity(graphqlResult)).toEqual(true);
 
       // integrity of an unused package
-      const unusedResult = await checkIntegrity('@example/angular');
+      const unusedResult = await checkIntegrity({
+        name: '@example/angular',
+        registry,
+      });
 
       expect(unusedResult['@example/angular'].integrity).toEqual(true);
 
       // integrity of a package that is used once
-      const onceResult = await checkIntegrity('react');
+      const onceResult = await checkIntegrity({
+        name: 'react',
+        registry,
+      });
 
       expect(onceResult['react'].integrity).toEqual(true);
 
@@ -36,7 +50,9 @@ describe('integrity', () => {
         graphql,
         ['@example/angular']: exampleAngular,
         react,
-      } = await checkIntegrity();
+      } = await checkIntegrity({
+        registry,
+      });
 
       // graphql
       expect(graphql.integrity).toEqual(true);

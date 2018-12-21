@@ -1,5 +1,4 @@
-import { connect, createRegistry, Dependency } from '../registry';
-import { scan } from '../scanner';
+import { connect, Dependency, Registry } from '../registry';
 
 interface Result {
   integrity: boolean;
@@ -10,9 +9,13 @@ export interface IntegrityResult {
   [packageName: string]: Result;
 }
 
-export async function checkIntegrity(name?: string): Promise<IntegrityResult> {
-  const locations = await scan();
-  const registry = await createRegistry(locations);
+export async function checkIntegrity({
+  name,
+  registry,
+}: {
+  name?: string;
+  registry: Registry;
+}): Promise<IntegrityResult> {
   const graph = connect(registry);
 
   if (name) {

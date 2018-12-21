@@ -1,11 +1,18 @@
-import { connect, createRegistry, createPackageMap } from '../registry';
-import { scan } from '../scanner';
+import { connect, createPackageMap, Registry } from '../registry';
 import { updatePackages } from '../file';
 import { getVersionOf } from './get-version';
 import * as semver from 'semver';
 
-export async function bumpVersionOf(name: string, type: semver.ReleaseType) {
-  const currentVersion = await getVersionOf(name);
+export async function bumpVersionOf({
+  name,
+  type,
+  registry,
+}: {
+  name: string;
+  type: semver.ReleaseType;
+  registry: Registry;
+}) {
+  const currentVersion = await getVersionOf({ name, registry });
 
   if (typeof currentVersion !== 'string') {
     throw new Error(`Module ${name} has multiple version`);
@@ -17,16 +24,23 @@ export async function bumpVersionOf(name: string, type: semver.ReleaseType) {
     throw new Error(`Failed to bump ${module} by ${type}`);
   }
 
-  return setVersionOf(name, version);
+  return setVersionOf({
+    name,
+    version,
+    registry,
+  });
 }
 
-export async function setVersionOf(
-  name: string,
-  version: string,
-): Promise<void> {
+export async function setVersionOf({
+  name,
+  version,
+  registry,
+}: {
+  name: string;
+  version: string;
+  registry: Registry;
+}): Promise<void> {
   const updater = updatePackages();
-  const locations = await scan();
-  const registry = await createRegistry(locations);
   const packageMap = createPackageMap(registry);
   const graph = connect(registry);
   const dep = graph.getNodeData(name);

@@ -1,10 +1,13 @@
-import { connect, createRegistry, Dependency } from '../registry';
-import { scan } from '../scanner';
+import { connect, Dependency, Registry } from '../registry';
 import { checkIntegrity } from './integrity';
 
-export async function getVersionOf(name: string): Promise<string | Dependency> {
-  const locations = await scan();
-  const registry = await createRegistry(locations);
+export async function getVersionOf({
+  name,
+  registry,
+}: {
+  name: string;
+  registry: Registry;
+}): Promise<string | Dependency> {
   const graph = connect(registry);
   const dep = graph.getNodeData(name);
 
@@ -13,7 +16,10 @@ export async function getVersionOf(name: string): Promise<string | Dependency> {
   }
 
   // optimize that
-  const hasIntegrity = await checkIntegrity(name);
+  const hasIntegrity = await checkIntegrity({
+    name,
+    registry,
+  });
 
   if (hasIntegrity) {
     const first = dep[Object.keys(dep)[0]];

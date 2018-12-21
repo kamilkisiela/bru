@@ -1,5 +1,4 @@
-import { createRegistry, createPackageMap } from '../registry';
-import { scan } from '../scanner';
+import { Registry, createPackageMap } from '../registry';
 import { updatePackages } from '../file';
 
 export async function addDependency({
@@ -7,15 +6,15 @@ export async function addDependency({
   parent,
   version,
   type,
+  registry,
 }: {
   name: string;
   version: string;
   parent: string;
   type: 'direct' | 'dev';
+  registry: Registry;
 }): Promise<void> {
   const updater = updatePackages();
-  const locations = await scan();
-  const registry = await createRegistry(locations);
   const packageMap = createPackageMap(registry);
 
   if (!parent) {

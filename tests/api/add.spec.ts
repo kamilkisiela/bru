@@ -4,6 +4,8 @@ const detectIndent = require('detect-indent');
 import { setCWD } from '../../src/consts';
 import { addDependency } from '../../src/api/add';
 import { readPackage, writePackage } from '../../src/file';
+import { scan } from '../../src/scanner';
+import { createRegistry } from '../../src/registry';
 
 describe('Set version', () => {
   ['lerna', 'yarn'].forEach(manager => {
@@ -11,12 +13,16 @@ describe('Set version', () => {
       const cwd = resolve(__dirname, `../../example/${manager}`);
       setCWD(cwd);
 
+      const locations = await scan();
+      const registry = await createRegistry(locations);
+
       // make changes
       await addDependency({
         name: 'prettier',
         version: '1.15.0',
         parent: `${manager}-example`,
         type: 'dev',
+        registry,
       });
 
       const pkg = await readPackage(cwd);

@@ -2,13 +2,15 @@
 
 import * as program from 'commander';
 import * as semver from 'semver';
-// import chalk from 'chalk';
+import chalk from 'chalk';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-// const log = console.log;
+const log = console.log;
 
-// import { Manager, ChangeInfo } from './manager';
+import { scan } from './scanner';
+import { createRegistry } from './registry';
+import { checkIntegrity, hasIntegrity } from './api/integrity';
 
 const pkg: any = JSON.parse(
   readFileSync(resolve(process.cwd(), 'package.json'), {
@@ -22,26 +24,26 @@ program
   .command('check [name]')
   .alias('c')
   .description('Checks integrity')
-  .action(async name => {
-    // log(
-    //   chalk.blue(
-    //     'Checking integrity',
-    //     name ? `of ${chalk.bold(name)} package` : '',
-    //   ),
-    // );
+  .action(async (name: string) => {
+    log(
+      chalk.blue(
+        'Checking integrity',
+        name ? `of ${chalk.bold(name)} package` : '',
+      ),
+    );
 
-    // try {
-    //   const manager = new Manager();
-    //   if (name) {
-    //     await manager.checkIntegrityOf(name);
-    //   } else {
-    //     await manager.checkIntegrity();
-    //   }
+    const registry = await createRegistry(await scan());
 
-    //   log(chalk.green.bold('All good'));
-    // } catch (e) {
-    //   handleError(e, ['Checking integrity']);
-    // }
+    const results = await checkIntegrity({
+      name,
+      registry,
+    });
+
+    if (hasIntegrity(results)) {
+      log(chalk.green.bold('All good'));
+    } else {
+      log(chalk.red('Multiple versions'));
+    }
   });
 
 program
@@ -57,17 +59,14 @@ program
       cmd: program.Command,
     ) => {
       // log(chalk.blue('Adding', chalk.bold(name)));
-
       // try {
       //   const manager = new Manager();
-
       //   await manager.add({
       //     name,
       //     versionOrTag,
       //     type: cmd['save-dev'] ? 'dev' : 'direct',
       //     space: cmd.root ? 'root' : cmd.package,
       //   });
-
       //   log(chalk.green('Added', chalk.bold(name)));
       // } catch (e) {
       //   handleError(e, ['Failed to add', chalk.bold(name)]);
@@ -82,25 +81,20 @@ program
   .option('-f, --force', 'Force setting a new version, skips integrity check')
   .action(async (name: string, versionOrTag: string, cmd: program.Command) => {
     // log(chalk.blue('Updating', chalk.bold(name), `(trying ${versionOrTag})`));
-
     // try {
     //   const manager = new Manager();
     //   const version = versionOrTag.includes('.')
     //     ? versionOrTag
     //     : await manager.fetchVersion(name, versionOrTag);
-
     //   if (!semver.valid(version)) {
     //     throw new Error(`Invalid version: ${version}`);
     //   }
-
     //   const updates = await manager.setVersion(
     //     name,
     //     version,
     //     cmd.force === true,
     //   );
-
     //   printUpdates(updates);
-
     //   log(chalk.green('Updated', chalk.bold(name), 'to', chalk.bold(version)));
     // } catch (e) {
     //   handleError(e, ['Failed to update', chalk.bold(name)]);
@@ -115,7 +109,6 @@ program
     // try {
     //   const manager = new Manager();
     //   const version = await manager.getVersion(name);
-
     //   log(chalk.green(chalk.bold(name), 'is', chalk.bold(version)));
     // } catch (e) {
     //   handleError(e, ['Failed to get a version', chalk.bold(name)]);
@@ -130,24 +123,18 @@ program
   .action(
     async (name: string, type: semver.ReleaseType, cmd: program.Command) => {
       // log(chalk.blue('Bumping', chalk.bold(name), 'by', chalk.bold(type)));
-
       // try {
       //   const manager = new Manager();
-
       //   const version = semver.inc(
       //     await manager.getVersion(name),
       //     type,
       //     cmd.preid || 'beta',
       //   );
-
       //   if (!version) {
       //     throw new Error(`Failed to bump version of ${name}`);
       //   }
-
       //   const updates = await manager.setVersion(name, version);
-
       //   printUpdates(updates);
-
       //   log(chalk.green('Bumped', chalk.bold(name), 'to', chalk.bold(version)));
       // } catch (e) {
       //   handleError(e, ['Failed to bump', chalk.bold(name)]);
