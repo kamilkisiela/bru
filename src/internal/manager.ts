@@ -1,12 +1,9 @@
-import { readFileSync } from 'fs';
 import { join } from 'path';
-import {getCWD} from '../consts';
+import setup from './setup';
 
 export async function whichManager(): Promise<'yarn' | 'lerna'> {
   const pkg = JSON.parse(
-    readFileSync(join(getCWD(), 'package.json'), {
-      encoding: 'utf-8',
-    }),
+    await setup.fs.readFile(join(setup.cwd, 'package.json')),
   );
 
   if (pkg.workspaces) {

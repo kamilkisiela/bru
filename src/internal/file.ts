@@ -2,6 +2,37 @@ import { readFile, writeFile } from 'fs';
 import immer from 'immer';
 const detectIndent = require('detect-indent');
 import { join } from 'path';
+import setup from './setup';
+
+export interface FileSystem {
+  readFile(filepath: string): Promise<string>;
+  writeFile(filepath: string, data: string): Promise<void>;
+}
+
+export const fs: FileSystem = {
+  async writeFile(filepath, data) {
+    return new Promise<any>((resolve, reject) => {
+      writeFile(filepath, data, { encoding: 'utf-8' }, err => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+  },
+  async readFile(filepath) {
+    return new Promise<string>((resolve, reject) => {
+      readFile(filepath, { encoding: 'utf-8' }, (err, raw) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(raw);
+        }
+      });
+    });
+  },
+};
 
 export type Change = InsertEvent | UpdateEvent | DeleteEvent;
 
@@ -107,27 +138,12 @@ export async function readPackage(
     devDependencies?: Record<string, string>;
   };
 }> {
-  return new Promise<{
-    raw: string;
-    data: any;
-  }>((resolve, reject) => {
-    readFile(
-      join(location, 'package.json'),
-      { encoding: 'utf-8' },
-      (err, raw) => {
-        if (err) {
-          reject(err);
-        } else {
-          const data = JSON.parse(raw);
+  const raw = await setup.fs.readFile(join(location, 'package.json'));
 
-          resolve({
-            raw,
-            data,
-          });
-        }
-      },
-    );
-  });
+  return {
+    raw,
+    data: JSON.parse(raw),
+  };
 }
 
 export async function writePackage({
@@ -139,18 +155,8 @@ export async function writePackage({
   data: any;
   indent: string;
 }): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    writeFile(
-      join(location, 'package.json'),
-      JSON.stringify(data, null, indent),
-      { encoding: 'utf-8' },
-      err => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      },
-    );
-  });
+  return setup.fs.writeFile(
+    join(location, 'package.json'),
+    JSON.stringify(data, null, indent),
+  );
 }

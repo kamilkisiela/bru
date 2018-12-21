@@ -1,18 +1,28 @@
 import { resolve } from 'path';
 
-import { setCWD } from '../../src/consts';
+import setup from '../../src/internal/setup';
 import { scan } from '../../src/internal/scanner';
 import { createRegistry } from '../../src/internal/registry';
 import { setVersionOf, bumpVersionOf } from '../../src/api/set-version';
-import { checkIntegrity, hasIntegrity } from '../../src/api/integrity';
-import { readPackage } from '../../src/internal/file';
+import { fs } from '../../src/internal/file';
 
 describe('Set version', () => {
+  afterEach(() => {
+    setup.fs = fs;
+  });
+
   ['lerna', 'yarn'].forEach(manager => {
     test(manager, async () => {
-      setCWD(resolve(__dirname, `../../example/${manager}`));
+      setup.cwd = resolve(__dirname, `../../example/${manager}`);
+
       const locations = await scan();
       const registry = await createRegistry(locations);
+      const writeFile = jest.fn().mockResolvedValue(Promise.resolve());
+
+      setup.fs = {
+        writeFile,
+        readFile: fs.readFile,
+      };
 
       // make changes
       await setVersionOf({
@@ -21,37 +31,38 @@ describe('Set version', () => {
         registry,
       });
 
-      const freshRegistry = await createRegistry(locations);
+      expect(writeFile).toHaveBeenCalledTimes(4);
+      writeFile.mock.calls.forEach(call => {
+        const pkg = JSON.parse(call[1]);
 
-      expect(
-        hasIntegrity(
-          await checkIntegrity({
-            name: 'graphql',
-            registry: freshRegistry,
-          }),
-        ),
-      ).toEqual(true);
-      const pkgs = await Promise.all(locations.map(readPackage));
-      expect(
-        pkgs.every(pkg => pkg.data.dependencies!.graphql === '14.0.3'),
-      ).toEqual(true);
+        const deps = {
+          ...pkg.dependencies,
+          ...pkg.devDependencies,
+        };
 
-      // revert changes
-      await setVersionOf({
-        name: 'graphql',
-        version: '14.0.2',
-        registry: freshRegistry,
+        expect(deps.graphql).toEqual('14.0.3');
       });
     });
   });
 });
 
 describe('Bump version', () => {
+  afterEach(() => {
+    setup.fs = fs;
+  });
+
   ['lerna', 'yarn'].forEach(manager => {
     test(manager, async () => {
-      setCWD(resolve(__dirname, `../../example/${manager}`));
+      setup.cwd = resolve(__dirname, `../../example/${manager}`);
+
       const locations = await scan();
       const registry = await createRegistry(locations);
+      const writeFile = jest.fn().mockResolvedValue(Promise.resolve());
+
+      setup.fs = {
+        writeFile,
+        readFile: fs.readFile,
+      };
 
       // bump
       await bumpVersionOf({
@@ -60,27 +71,16 @@ describe('Bump version', () => {
         registry,
       });
 
-      const freshRegistry = await createRegistry(locations);
+      expect(writeFile).toHaveBeenCalledTimes(4);
+      writeFile.mock.calls.forEach(call => {
+        const pkg = JSON.parse(call[1]);
 
-      expect(
-        hasIntegrity(
-          await checkIntegrity({
-            name: 'graphql',
-            registry: freshRegistry,
-          }),
-        ),
-      ).toEqual(true);
+        const deps = {
+          ...pkg.dependencies,
+          ...pkg.devDependencies,
+        };
 
-      const pkgs = await Promise.all(locations.map(readPackage));
-      expect(
-        pkgs.every(pkg => pkg.data.dependencies!.graphql === '14.1.0'),
-      ).toEqual(true);
-
-      // revert changes
-      await setVersionOf({
-        name: 'graphql',
-        version: '14.0.2',
-        registry: freshRegistry,
+        expect(deps.graphql).toEqual('14.1.0');
       });
     });
   });

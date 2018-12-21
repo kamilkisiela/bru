@@ -1,5 +1,5 @@
 import { resolve } from 'path';
-import { setCWD } from '../../src/consts';
+import setup from '../../src/internal/setup';
 import { scan } from '../../src/internal/scanner';
 import { createRegistry } from '../../src/internal/registry';
 import { checkIntegrity, hasIntegrity } from '../../src/api/integrity';
@@ -9,7 +9,7 @@ describe('integrity', () => {
     test(manager, async () => {
       const cwd = resolve(__dirname, `../../example/${manager}`);
 
-      setCWD(cwd);
+      setup.cwd = cwd;
 
       const locations = await scan();
       const registry = await createRegistry(locations);

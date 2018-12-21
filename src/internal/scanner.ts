@@ -1,7 +1,7 @@
 import { resolve } from 'path';
 import * as execa from 'execa';
 import { whichManager } from './manager';
-import { getCWD } from '../consts';
+import setup from './setup';
 
 interface YarnInfo {
   [name: string]: {
@@ -10,7 +10,7 @@ interface YarnInfo {
 }
 
 export async function scan(): Promise<string[]> {
-  const cwd = getCWD();
+  const cwd = setup.cwd;
   const manager = await whichManager();
   const locations: string[] = [cwd];
 

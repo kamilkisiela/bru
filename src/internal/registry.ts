@@ -1,6 +1,6 @@
-import { readFile } from 'fs';
 import { join } from 'path';
 import { DepGraph } from 'dependency-graph';
+import setup from './setup';
 
 export interface Package {
   name: string;
@@ -127,26 +127,16 @@ export function createPackageMap(registry: Registry): PackageMap {
 }
 
 async function readPackage(location: string): Promise<Package> {
-  return new Promise<Package>((resolve, reject) => {
-    readFile(
-      join(location, 'package.json'),
-      { encoding: 'utf-8' },
-      (err, data) => {
-        if (err) {
-          reject(err);
-        } else {
-          const pkg = JSON.parse(data);
+  const raw = await setup.fs.readFile(join(location, 'package.json'));
 
-          resolve({
-            name: pkg.name,
-            version: pkg.version,
-            dependencies: pkg.dependencies,
-            devDependencies: pkg.devDependencies,
-            peerDependencies: pkg.peerDependencies,
-            private: !!pkg.private,
-          });
-        }
-      },
-    );
-  });
+  const pkg = JSON.parse(raw);
+
+  return {
+    name: pkg.name,
+    version: pkg.version,
+    dependencies: pkg.dependencies,
+    devDependencies: pkg.devDependencies,
+    peerDependencies: pkg.peerDependencies,
+    private: !!pkg.private,
+  };
 }

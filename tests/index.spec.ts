@@ -1,6 +1,6 @@
 import { resolve, join } from 'path';
 
-import { setCWD } from '../src/consts';
+import setup from '../src/internal/setup';
 import { scan } from '../src/internal/scanner';
 import { createRegistry, connect } from '../src/internal/registry';
 
@@ -9,7 +9,7 @@ describe('Basic', () => {
     test(manager, async () => {
       const cwd = resolve(__dirname, `../example/${manager}`);
       
-      setCWD(cwd);
+      setup.cwd = cwd;
       
       const locations = await scan();
 
