@@ -28,14 +28,18 @@
   "scripts": {
     "build": "tsc",
     "prerelease": "yarn build",
-    "release": "npm publish"
+    "release": "npm publish",
+    "test": "jest"
   },
   "devDependencies": {
     "@types/execa": "0.9.0",
+    "@types/jest": "23.3.10",
     "@types/json5": "0.0.30",
     "@types/node": "10.12.18",
     "@types/semver": "5.5.0",
     "@types/shelljs": "0.8.1",
+    "jest": "23.6.0",
+    "ts-jest": "23.10.5",
     "typescript": "3.2.2"
   },
   "dependencies": {
