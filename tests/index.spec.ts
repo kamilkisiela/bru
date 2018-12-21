@@ -78,22 +78,25 @@ describe('Basic', () => {
 
       expect(graph.size()).toEqual(3 + (manager === 'lerna' ? 5 : 4));
 
-      const graphqlNode = graph.getNodeData('graphql');
+      const graphql = {
+        node: graph.getNodeData('graphql'),
+        version: '14.0.2'
+      };
       // graphql at core
-      expect(graphqlNode['@example/core']).toMatchObject({
-        direct: '14.0.2',
+      expect(graphql.node['@example/core']).toMatchObject({
+        direct: graphql.version,
       });
       // graphql at angular
-      expect(graphqlNode['@example/angular']).toMatchObject({
-        direct: '14.0.2',
+      expect(graphql.node['@example/angular']).toMatchObject({
+        direct: graphql.version,
       });
       // graphql at react
-      expect(graphqlNode['@example/react']).toMatchObject({
-        direct: '14.0.2',
+      expect(graphql.node['@example/react']).toMatchObject({
+        direct: graphql.version,
       });
       // graphql at root
-      expect(graphqlNode[`${manager}-example`]).toMatchObject({
-        direct: '14.0.2',
+      expect(graphql.node[`${manager}-example`]).toMatchObject({
+        direct: graphql.version,
       });
     });
   });

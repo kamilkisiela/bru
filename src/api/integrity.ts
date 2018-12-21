@@ -40,7 +40,10 @@ function integrityOf(dep: Dependency): Result {
     return versions.concat([pkg.dev, pkg.direct].filter(isString));
   }, []);
 
-  const integrity = versions.some((val, i, all) => all.indexOf(val) !== i);
+  const integrity =
+    versions && versions.length > 1
+      ? versions.some((val, i, all) => all.indexOf(val) !== i)
+      : true;
 
   return {
     integrity,
