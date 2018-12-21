@@ -32,6 +32,12 @@ export interface Dependency {
   };
 }
 
+export interface PackageMap {
+  [name: string]: Package & {
+    location: string;
+  };
+}
+
 export interface Registry {
   [location: string]: Package;
 }
@@ -103,7 +109,24 @@ export async function createRegistry(locations: string[]): Promise<Registry> {
   return registry;
 }
 
-export async function readPackage(location: string): Promise<Package> {
+export function createPackageMap(registry: Registry): PackageMap {
+  const map: PackageMap = {};
+
+  for (const location in registry) {
+    if (registry.hasOwnProperty(location)) {
+      const pkg = registry[location];
+
+      map[pkg.name] = {
+        location,
+        ...pkg,
+      };
+    }
+  }
+
+  return map;
+}
+
+async function readPackage(location: string): Promise<Package> {
   return new Promise<Package>((resolve, reject) => {
     readFile(
       join(location, 'package.json'),
