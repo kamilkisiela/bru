@@ -41,7 +41,7 @@ export async function setVersionOf(
         name,
         location: packageMap[parentName].location,
         version,
-        type: 'SET',
+        type: 'UPDATE',
       });
     }
   }

@@ -3,19 +3,27 @@ import immer from 'immer';
 const detectIndent = require('detect-indent');
 import { join } from 'path';
 
-export type Change = SetEvent | UnsetEvent;
+export type Change = InsertEvent | UpdateEvent | DeleteEvent;
 
-interface SetEvent {
+interface InsertEvent {
   location: string;
   name: string;
   version: string;
-  type: 'SET';
+  dependency: 'direct' | 'dev';
+  type: 'INSERT';
 }
 
-interface UnsetEvent {
+interface UpdateEvent {
   location: string;
   name: string;
-  type: 'UNSET';
+  version: string;
+  type: 'UPDATE';
+}
+
+interface DeleteEvent {
+  location: string;
+  name: string;
+  type: 'DELETE';
 }
 
 export function updatePackages() {
@@ -43,7 +51,7 @@ export function updatePackages() {
 
     const updated = immer(pkg.data, data => {
       changes.forEach(change => {
-        if (change.type === 'SET') {
+        if (change.type === 'UPDATE') {
           if (data.dependencies) {
             data.dependencies[change.name] = change.version;
           }
@@ -53,7 +61,23 @@ export function updatePackages() {
           }
         }
 
-        if (change.type === 'UNSET') {
+        if (change.type === 'INSERT') {
+          if (change.dependency === 'direct') {
+            if (!data.dependencies) {
+              data.dependencies = {};
+            }
+            data.dependencies[change.name] = change.version;
+          }
+
+          if (change.dependency === 'dev') {
+            if (!data.devDependencies) {
+              data.devDependencies = {};
+            }
+            data.devDependencies[change.name] = change.version;
+          }
+        }
+
+        if (change.type === 'DELETE') {
           if (data.dependencies && data.dependencies[change.name]) {
             delete data.dependencies[change.name];
           }
@@ -106,7 +130,7 @@ export async function readPackage(
   });
 }
 
-async function writePackage({
+export async function writePackage({
   location,
   data,
   indent,
