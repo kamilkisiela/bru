@@ -1,7 +1,7 @@
 import { resolve } from 'path';
 import * as execa from 'execa';
 import { whichManager } from './manager';
-import { getCWD } from './consts';
+import { getCWD } from '../consts';
 
 interface YarnInfo {
   [name: string]: {

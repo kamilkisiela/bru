@@ -1,4 +1,4 @@
-import { connect, Dependency, Registry } from '../registry';
+import { connect, Dependency, Registry } from '../internal/registry';
 
 interface Result {
   integrity: boolean;

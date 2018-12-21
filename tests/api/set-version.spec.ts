@@ -1,11 +1,11 @@
 import { resolve } from 'path';
 
 import { setCWD } from '../../src/consts';
-import { scan } from '../../src/scanner';
-import { createRegistry } from '../../src/registry';
+import { scan } from '../../src/internal/scanner';
+import { createRegistry } from '../../src/internal/registry';
 import { setVersionOf, bumpVersionOf } from '../../src/api/set-version';
 import { checkIntegrity, hasIntegrity } from '../../src/api/integrity';
-import { readPackage } from '../../src/file';
+import { readPackage } from '../../src/internal/file';
 
 describe('Set version', () => {
   ['lerna', 'yarn'].forEach(manager => {

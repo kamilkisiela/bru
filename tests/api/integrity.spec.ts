@@ -1,7 +1,7 @@
 import { resolve } from 'path';
 import { setCWD } from '../../src/consts';
-import { scan } from '../../src/scanner';
-import { createRegistry } from '../../src/registry';
+import { scan } from '../../src/internal/scanner';
+import { createRegistry } from '../../src/internal/registry';
 import { checkIntegrity, hasIntegrity } from '../../src/api/integrity';
 
 describe('integrity', () => {

@@ -1,8 +1,8 @@
 import { resolve, join } from 'path';
 
 import { setCWD } from '../src/consts';
-import { scan } from '../src/scanner';
-import { createRegistry, connect } from '../src/registry';
+import { scan } from '../src/internal/scanner';
+import { createRegistry, connect } from '../src/internal/registry';
 
 describe('Basic', () => {
   ['lerna', 'yarn'].forEach(manager => {

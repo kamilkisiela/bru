@@ -1,5 +1,5 @@
-import { connect, createPackageMap, Registry } from '../registry';
-import { updatePackages } from '../file';
+import { connect, createPackageMap, Registry } from '../internal/registry';
+import { updatePackages } from '../internal/file';
 import { getVersionOf } from './get-version';
 import * as semver from 'semver';
 

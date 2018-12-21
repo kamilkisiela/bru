@@ -8,8 +8,8 @@ import { resolve } from 'path';
 
 const log = console.log;
 
-import { scan } from './scanner';
-import { createRegistry } from './registry';
+import { scan } from './internal/scanner';
+import { createRegistry } from './internal/registry';
 import { checkIntegrity, hasIntegrity } from './api/integrity';
 
 const pkg: any = JSON.parse(

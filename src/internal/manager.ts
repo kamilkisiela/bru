@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import {getCWD} from './consts';
+import {getCWD} from '../consts';
 
 export async function whichManager(): Promise<'yarn' | 'lerna'> {
   const pkg = JSON.parse(

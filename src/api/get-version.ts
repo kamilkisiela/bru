@@ -1,4 +1,4 @@
-import { connect, Dependency, Registry } from '../registry';
+import { connect, Dependency, Registry } from '../internal/registry';
 import { checkIntegrity } from './integrity';
 
 export async function getVersionOf({

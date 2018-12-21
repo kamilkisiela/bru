@@ -1,5 +1,5 @@
-import { Registry, createPackageMap } from '../registry';
-import { updatePackages } from '../file';
+import { Registry, createPackageMap } from '../internal/registry';
+import { updatePackages } from '../internal/file';
 
 export async function addDependency({
   name,

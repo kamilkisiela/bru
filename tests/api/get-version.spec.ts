@@ -2,8 +2,8 @@ import { resolve } from 'path';
 
 import { setCWD } from '../../src/consts';
 import { getVersionOf } from '../../src/api/get-version';
-import { scan } from '../../src/scanner';
-import { createRegistry } from '../../src/registry';
+import { scan } from '../../src/internal/scanner';
+import { createRegistry } from '../../src/internal/registry';
 
 describe('Get version', () => {
   ['lerna', 'yarn'].forEach(manager => {
