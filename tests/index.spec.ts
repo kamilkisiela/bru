@@ -1,8 +1,8 @@
 import { resolve, join } from 'path';
 
 import setup from '../src/internal/setup';
-import { scan } from '../src/internal/scanner';
-import { createRegistry, connect } from '../src/internal/registry';
+import { findLocations } from '../src/internal/manager';
+import { createRegistry, createGraph } from '../src/internal/registry';
 
 describe('Basic', () => {
   ['lerna', 'yarn'].forEach(manager => {
@@ -11,7 +11,7 @@ describe('Basic', () => {
       
       setup.cwd = cwd;
       
-      const locations = await scan();
+      const locations = await findLocations();
 
       expect(locations.length).toEqual(4);
       expect(locations.every(loc => loc.startsWith(cwd))).toEqual(true);
@@ -61,7 +61,7 @@ describe('Basic', () => {
         },
       });
 
-      const graph = connect(registry);
+      const graph = createGraph(registry);
 
       // @angular/core  -> angular
       expect(graph.dependantsOf('@angular/core').length).toEqual(1);

@@ -1,5 +1,7 @@
 import { join } from 'path';
 import { DepGraph } from 'dependency-graph';
+
+import { pickProp } from './utils';
 import setup from './setup';
 
 export interface Package {
@@ -44,7 +46,7 @@ export interface Registry {
 
 export type DependencyGraph = DepGraph<Dependency>;
 
-export function connect(registry: Registry): DependencyGraph {
+export function createGraph(registry: Registry): DependencyGraph {
   const graph = new DepGraph<Dependency>({
     circular: false,
   });
@@ -68,9 +70,9 @@ export function connect(registry: Registry): DependencyGraph {
       deps.forEach(dep => {
         const current: Dependency = {
           [pkg.name]: {
-            direct: pkg.dependencies && pkg.dependencies[dep],
-            peer: pkg.peerDependencies && pkg.peerDependencies[dep],
-            dev: pkg.devDependencies && pkg.devDependencies[dep],
+            direct: pickProp(pkg.dependencies, dep),
+            peer: pickProp(pkg.peerDependencies, dep),
+            dev: pickProp(pkg.devDependencies, dep),
           },
         };
 

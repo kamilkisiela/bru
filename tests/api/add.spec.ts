@@ -1,8 +1,8 @@
 import { resolve } from 'path';
 import setup from '../../src/internal/setup';
 import { addDependency } from '../../src/api/add';
-import { fs } from '../../src/internal/file';
-import { scan } from '../../src/internal/scanner';
+import { fs } from '../../src/internal/fs';
+import { findLocations } from '../../src/internal/manager';
 import { createRegistry } from '../../src/internal/registry';
 
 describe('Set version', () => {
@@ -22,7 +22,7 @@ describe('Set version', () => {
         readFile: fs.readFile,
       };
 
-      const locations = await scan();
+      const locations = await findLocations();
       const registry = await createRegistry(locations);
 
       // make changes

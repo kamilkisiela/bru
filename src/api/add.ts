@@ -1,25 +1,29 @@
 import { Registry, createPackageMap } from '../internal/registry';
-import { updatePackages } from '../internal/file';
+import { updatePackages } from '../internal/fs';
 
-export async function addDependency({
-  name,
-  parent,
-  version,
-  type,
-  registry,
-}: {
+export interface AddInput {
   name: string;
-  version: string;
   parent: string;
   type: 'direct' | 'dev';
   registry: Registry;
-}): Promise<void> {
+  version: string;
+}
+
+export async function addDependency({
+  registry,
+  version,
+  name,
+  type,
+  parent,
+}: AddInput): Promise<void> {
   const updater = updatePackages();
   const packageMap = createPackageMap(registry);
 
   if (!parent) {
     throw new Error(`Module ${parent} is not available in your project`);
   }
+
+  // TODO: on local package, it should get the version from the registry
 
   updater.change({
     name,

@@ -1,7 +1,8 @@
-import { connect, createPackageMap, Registry } from '../internal/registry';
-import { updatePackages } from '../internal/file';
-import { getVersionOf } from './get-version';
 import * as semver from 'semver';
+
+import { createGraph, createPackageMap, Registry } from '../internal/registry';
+import { updatePackages } from '../internal/fs';
+import { getVersionOf } from './get-version';
 
 export async function bumpVersionOf({
   name,
@@ -42,12 +43,14 @@ export async function setVersionOf({
 }): Promise<void> {
   const updater = updatePackages();
   const packageMap = createPackageMap(registry);
-  const graph = connect(registry);
+  const graph = createGraph(registry);
   const dep = graph.getNodeData(name);
 
   if (!dep) {
     throw new Error(`Module ${name} is not available in your project`);
   }
+
+  // TODO: on local package, it should get the version from the registry
 
   for (const parentName in dep) {
     if (dep.hasOwnProperty(parentName)) {

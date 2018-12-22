@@ -1,4 +1,4 @@
-import { connect, Dependency, Registry } from '../internal/registry';
+import { createGraph, Dependency, Registry } from '../internal/registry';
 import { checkIntegrity } from './integrity';
 
 export async function getVersionOf({
@@ -8,7 +8,7 @@ export async function getVersionOf({
   name: string;
   registry: Registry;
 }): Promise<string | Dependency> {
-  const graph = connect(registry);
+  const graph = createGraph(registry);
   const dep = graph.getNodeData(name);
 
   if (!dep) {

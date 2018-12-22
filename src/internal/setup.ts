@@ -1,4 +1,4 @@
-import { FileSystem, fs } from './file';
+import { FileSystem, fs } from './fs';
 
 class Setup {
   private _cwd: string = process.cwd();

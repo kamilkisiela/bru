@@ -2,7 +2,7 @@ import { resolve } from 'path';
 
 import setup from '../../src/internal/setup';
 import { getVersionOf } from '../../src/api/get-version';
-import { scan } from '../../src/internal/scanner';
+import { findLocations } from '../../src/internal/manager';
 import { createRegistry } from '../../src/internal/registry';
 
 describe('Get version', () => {
@@ -10,7 +10,7 @@ describe('Get version', () => {
     test(manager, async () => {
       setup.cwd = resolve(__dirname, `../../example/${manager}`);
 
-      const locations = await scan();
+      const locations = await findLocations();
       const registry = await createRegistry(locations);
 
       expect(

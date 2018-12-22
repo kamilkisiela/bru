@@ -8,9 +8,14 @@ import { resolve } from 'path';
 
 const log = console.log;
 
-import { scan } from './internal/scanner';
+import { findLocations } from './internal/manager';
 import { createRegistry } from './internal/registry';
+import { isTag } from './internal/utils';
+import { getVersionByTag } from './internal/npm-api';
 import { checkIntegrity, hasIntegrity } from './api/integrity';
+import { addDependency } from './api/add';
+import { setVersionOf, bumpVersionOf } from './api/set-version';
+import { getVersionOf } from './api/get-version';
 
 const pkg: any = JSON.parse(
   readFileSync(resolve(process.cwd(), 'package.json'), {
@@ -32,7 +37,7 @@ program
       ),
     );
 
-    const registry = await createRegistry(await scan());
+    const registry = await createRegistry(await findLocations());
 
     const results = await checkIntegrity({
       name,
@@ -42,6 +47,7 @@ program
     if (hasIntegrity(results)) {
       log(chalk.green.bold('All good'));
     } else {
+      // FIX: it always shows All good...
       log(chalk.red('Multiple versions'));
     }
   });
@@ -55,9 +61,28 @@ program
   .action(
     async (
       name: string,
-      versionOrTag: string | undefined,
+      version: string | undefined,
       cmd: program.Command,
     ) => {
+      if (!version) {
+        version = 'latest';
+      }
+
+      const registry = await createRegistry(await findLocations());
+
+      // TODO: on local package, it should get the version from the registry
+      if (isTag(version)) {
+        version = await getVersionByTag(name, version);
+      }
+
+      await addDependency({
+        name,
+        registry,
+        type: cmd['save-dev'] ? 'dev' : 'direct',
+        parent: cmd.root ? 'root' : cmd.package,
+        version: version,
+      });
+
       // log(chalk.blue('Adding', chalk.bold(name)));
       // try {
       //   const manager = new Manager();
@@ -79,7 +104,20 @@ program
   .alias('s')
   .description('Sets a version of a package')
   .option('-f, --force', 'Force setting a new version, skips integrity check')
-  .action(async (name: string, versionOrTag: string, cmd: program.Command) => {
+  .action(async (name: string, version: string) => {
+    const registry = await createRegistry(await findLocations());
+
+    // TODO: on local package, it should get the version from the registry
+    if (isTag(version)) {
+      version = await getVersionByTag(name, version);
+    }
+
+    await setVersionOf({
+      name,
+      version,
+      registry,
+    });
+
     // log(chalk.blue('Updating', chalk.bold(name), `(trying ${versionOrTag})`));
     // try {
     //   const manager = new Manager();
@@ -106,6 +144,19 @@ program
   .alias('g')
   .description('Gets a version of a package')
   .action(async (name: string) => {
+    const registry = await createRegistry(await findLocations());
+
+    const result = await getVersionOf({
+      name,
+      registry,
+    });
+
+    if (typeof result === 'string') {
+      console.log(result);
+    } else {
+      console.log(result);
+    }
+
     // try {
     //   const manager = new Manager();
     //   const version = await manager.getVersion(name);
@@ -120,27 +171,32 @@ program
   .alias('b')
   .description('Bumps a version of a package')
   .option('-i, --preid <preid>', 'type of prerelease - x.x.x-[PREID].x')
-  .action(
-    async (name: string, type: semver.ReleaseType, cmd: program.Command) => {
-      // log(chalk.blue('Bumping', chalk.bold(name), 'by', chalk.bold(type)));
-      // try {
-      //   const manager = new Manager();
-      //   const version = semver.inc(
-      //     await manager.getVersion(name),
-      //     type,
-      //     cmd.preid || 'beta',
-      //   );
-      //   if (!version) {
-      //     throw new Error(`Failed to bump version of ${name}`);
-      //   }
-      //   const updates = await manager.setVersion(name, version);
-      //   printUpdates(updates);
-      //   log(chalk.green('Bumped', chalk.bold(name), 'to', chalk.bold(version)));
-      // } catch (e) {
-      //   handleError(e, ['Failed to bump', chalk.bold(name)]);
-      // }
-    },
-  );
+  .action(async (name: string, type: semver.ReleaseType) => {
+    const registry = await createRegistry(await findLocations());
+
+    await bumpVersionOf({
+      name,
+      type,
+      registry,
+    });
+    // log(chalk.blue('Bumping', chalk.bold(name), 'by', chalk.bold(type)));
+    // try {
+    //   const manager = new Manager();
+    //   const version = semver.inc(
+    //     await manager.getVersion(name),
+    //     type,
+    //     cmd.preid || 'beta',
+    //   );
+    //   if (!version) {
+    //     throw new Error(`Failed to bump version of ${name}`);
+    //   }
+    //   const updates = await manager.setVersion(name, version);
+    //   printUpdates(updates);
+    //   log(chalk.green('Bumped', chalk.bold(name), 'to', chalk.bold(version)));
+    // } catch (e) {
+    //   handleError(e, ['Failed to bump', chalk.bold(name)]);
+    // }
+  });
 
 program.parse(process.argv);
 

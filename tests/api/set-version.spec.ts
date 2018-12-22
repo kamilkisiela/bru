@@ -1,10 +1,10 @@
 import { resolve } from 'path';
 
 import setup from '../../src/internal/setup';
-import { scan } from '../../src/internal/scanner';
+import { findLocations } from '../../src/internal/manager';
 import { createRegistry } from '../../src/internal/registry';
 import { setVersionOf, bumpVersionOf } from '../../src/api/set-version';
-import { fs } from '../../src/internal/file';
+import { fs } from '../../src/internal/fs';
 
 describe('Set version', () => {
   afterEach(() => {
@@ -15,7 +15,7 @@ describe('Set version', () => {
     test(manager, async () => {
       setup.cwd = resolve(__dirname, `../../example/${manager}`);
 
-      const locations = await scan();
+      const locations = await findLocations();
       const registry = await createRegistry(locations);
       const writeFile = jest.fn().mockResolvedValue(Promise.resolve());
 
@@ -55,7 +55,7 @@ describe('Bump version', () => {
     test(manager, async () => {
       setup.cwd = resolve(__dirname, `../../example/${manager}`);
 
-      const locations = await scan();
+      const locations = await findLocations();
       const registry = await createRegistry(locations);
       const writeFile = jest.fn().mockResolvedValue(Promise.resolve());
 

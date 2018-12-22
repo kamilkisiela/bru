@@ -1,8 +1,18 @@
 import { readFile, writeFile } from 'fs';
-import immer from 'immer';
-const detectIndent = require('detect-indent');
 import { join } from 'path';
+import immer from 'immer';
+import * as detectStringIndent from 'detect-indent';
+
 import setup from './setup';
+import { ensureProp, updateProp } from './utils';
+
+export function detectIndent(data: string): string {
+  const { indent } = detectStringIndent(data);
+
+  return indent;
+}
+
+// File System
 
 export interface FileSystem {
   readFile(filepath: string): Promise<string>;
@@ -33,6 +43,8 @@ export const fs: FileSystem = {
     });
   },
 };
+
+// PackageJSON
 
 export type Change = InsertEvent | UpdateEvent | DeleteEvent;
 
@@ -78,34 +90,22 @@ export function updatePackages() {
   async function update(location: string) {
     const changes = changesMap[location];
     const pkg = await readPackage(location);
-    const { indent } = detectIndent(pkg.raw);
+    const indent = detectIndent(pkg.raw);
 
     const updated = immer(pkg.data, data => {
       changes.forEach(change => {
         if (change.type === 'UPDATE') {
-          if (data.dependencies) {
-            data.dependencies[change.name] = change.version;
-          }
-
-          if (data.devDependencies) {
-            data.devDependencies[change.name] = change.version;
-          }
+          updateProp(data.dependencies, change.name, change.version);
+          updateProp(data.devDependencies, change.name, change.version);
         }
 
         if (change.type === 'INSERT') {
-          if (change.dependency === 'direct') {
-            if (!data.dependencies) {
-              data.dependencies = {};
-            }
-            data.dependencies[change.name] = change.version;
-          }
-
-          if (change.dependency === 'dev') {
-            if (!data.devDependencies) {
-              data.devDependencies = {};
-            }
-            data.devDependencies[change.name] = change.version;
-          }
+          ensureProp(
+            data,
+            change.dependency === 'direct' ? 'dependencies' : 'devDependencies',
+            change.name,
+            change.version,
+          );
         }
 
         if (change.type === 'DELETE') {

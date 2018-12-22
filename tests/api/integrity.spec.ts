@@ -1,6 +1,6 @@
 import { resolve } from 'path';
 import setup from '../../src/internal/setup';
-import { scan } from '../../src/internal/scanner';
+import { findLocations } from '../../src/internal/manager';
 import { createRegistry } from '../../src/internal/registry';
 import { checkIntegrity, hasIntegrity } from '../../src/api/integrity';
 
@@ -11,7 +11,7 @@ describe('integrity', () => {
 
       setup.cwd = cwd;
 
-      const locations = await scan();
+      const locations = await findLocations();
       const registry = await createRegistry(locations);
 
       // integrity of a single package

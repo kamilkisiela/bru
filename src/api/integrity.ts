@@ -1,4 +1,4 @@
-import { connect, Dependency, Registry } from '../internal/registry';
+import { createGraph, Dependency, Registry } from '../internal/registry';
 
 interface Result {
   integrity: boolean;
@@ -16,7 +16,7 @@ export async function checkIntegrity({
   name?: string;
   registry: Registry;
 }): Promise<IntegrityResult> {
-  const graph = connect(registry);
+  const graph = createGraph(registry);
 
   if (name) {
     const dep = graph.getNodeData(name);
