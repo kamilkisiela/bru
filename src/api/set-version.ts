@@ -1,6 +1,6 @@
 import * as semver from 'semver';
 
-import { createGraph, createPackageMap, Registry } from '../internal/registry';
+import { createGraph, createPackageMap, Registry, isLocal } from '../internal/registry';
 import { updatePackages } from '../internal/fs';
 import { getVersionOf } from './get-version';
 
@@ -50,7 +50,14 @@ export async function setVersionOf({
     throw new Error(`Module ${name} is not available in your project`);
   }
 
-  // TODO: on local package, it should get the version from the registry
+  if (isLocal(name, registry)) {
+    updater.change({
+      name,
+      location: packageMap[name].location,
+      version,
+      type: 'UPDATE',
+    });
+  }
 
   for (const parentName in dep) {
     if (dep.hasOwnProperty(parentName)) {

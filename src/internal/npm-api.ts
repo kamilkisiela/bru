@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 
-async function readByVersion(
+async function fetchPackageByVersion(
   name: string,
   versionOrTag: string,
 ): Promise<{
@@ -11,7 +11,7 @@ async function readByVersion(
   return raw.json();
 }
 
-export async function getVersionByTag(
+export async function fetchVersionByTag(
   name: string,
   tag: string,
 ): Promise<string> {
@@ -19,7 +19,7 @@ export async function getVersionByTag(
     throw new Error(`Tag ${tag} is invalid`);
   }
 
-  const pkg = await readByVersion(name, tag);
+  const pkg = await fetchPackageByVersion(name, tag);
 
   return pkg.version;
 }

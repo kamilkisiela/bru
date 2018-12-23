@@ -23,8 +23,6 @@ export async function addDependency({
     throw new Error(`Module ${parent} is not available in your project`);
   }
 
-  // TODO: on local package, it should get the version from the registry
-
   updater.change({
     name,
     location: packageMap[parent].location,

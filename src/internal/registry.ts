@@ -1,8 +1,9 @@
 import { join } from 'path';
 import { DepGraph } from 'dependency-graph';
 
-import { pickProp } from './utils';
+import { pickProp, isTag } from './utils';
 import setup from './setup';
+import { fetchVersionByTag } from './npm-api';
 
 export interface Package {
   name: string;
@@ -141,4 +142,46 @@ async function readPackage(location: string): Promise<Package> {
     peerDependencies: pkg.peerDependencies,
     private: !!pkg.private,
   };
+}
+
+export function pickPackage(
+  name: string,
+  registry: Registry,
+): Package | undefined {
+  return Object.keys(registry)
+    .map(location => registry[location]!)
+    .find(pkg => pkg.name === name);
+}
+
+export function isLocal(name: string, registry: Registry): boolean {
+  return !!pickPackage(name, registry);
+}
+
+export async function ensureVersionOf({
+  name,
+  version,
+  registry,
+}: {
+  name: string;
+  version?: string;
+  registry: Registry;
+}): Promise<string> {
+  if (!version) {
+    version = 'latest';
+  }
+
+  // local
+  if (isLocal(name, registry)) {
+    if (isTag(version) && version !== 'latest') {
+      throw new Error(`Can't use a dist-tag on a local package ${name}`);
+    }
+
+    return pickPackage(name, registry)!.version;
+  }
+
+  if (isTag(version)) {
+    return fetchVersionByTag(name, version);
+  }
+
+  return version;
 }

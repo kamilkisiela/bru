@@ -95,6 +95,9 @@ export function updatePackages() {
     const updated = immer(pkg.data, data => {
       changes.forEach(change => {
         if (change.type === 'UPDATE') {
+          if (data.name === change.name) {
+            data.version = change.version;
+          }
           updateProp(data.dependencies, change.name, change.version);
           updateProp(data.devDependencies, change.name, change.version);
         }
@@ -134,6 +137,8 @@ export async function readPackage(
   raw: string;
   data: {
     [key: string]: any;
+    name: string;
+    version: string;
     dependencies?: Record<string, string>;
     devDependencies?: Record<string, string>;
   };

@@ -9,9 +9,9 @@ import { resolve } from 'path';
 const log = console.log;
 
 import { findLocations } from './internal/manager';
-import { createRegistry } from './internal/registry';
+import { createRegistry, isLocal, ensureVersionOf } from './internal/registry';
 import { isTag } from './internal/utils';
-import { getVersionByTag } from './internal/npm-api';
+import { fetchVersionByTag } from './internal/npm-api';
 import { checkIntegrity, hasIntegrity } from './api/integrity';
 import { addDependency } from './api/add';
 import { setVersionOf, bumpVersionOf } from './api/set-version';
@@ -59,28 +59,23 @@ program
   .option('-R, --root', 'Saves in the root')
   .option('-P, --package <name>', 'Saves in a package')
   .action(
-    async (
-      name: string,
-      version: string | undefined,
-      cmd: program.Command,
-    ) => {
+    async (name: string, version: string | undefined, cmd: program.Command) => {
       if (!version) {
         version = 'latest';
       }
 
       const registry = await createRegistry(await findLocations());
 
-      // TODO: on local package, it should get the version from the registry
-      if (isTag(version)) {
-        version = await getVersionByTag(name, version);
-      }
-
       await addDependency({
         name,
         registry,
         type: cmd['save-dev'] ? 'dev' : 'direct',
         parent: cmd.root ? 'root' : cmd.package,
-        version: version,
+        version: await ensureVersionOf({
+          name,
+          version,
+          registry,
+        }),
       });
 
       // log(chalk.blue('Adding', chalk.bold(name)));
@@ -107,9 +102,12 @@ program
   .action(async (name: string, version: string) => {
     const registry = await createRegistry(await findLocations());
 
-    // TODO: on local package, it should get the version from the registry
-    if (isTag(version)) {
-      version = await getVersionByTag(name, version);
+    if (isTag(version) && !isLocal(name, registry)) {
+      version = await fetchVersionByTag(name, version);
+    }
+
+    if (isLocal(name, registry) && isTag(version)) {
+      throw new Error(`Can't use a dist-tag on a local package ${name}`);
     }
 
     await setVersionOf({
@@ -154,6 +152,7 @@ program
     if (typeof result === 'string') {
       console.log(result);
     } else {
+      console.log(`Module ${name} has multiple versions`);
       console.log(result);
     }
 
