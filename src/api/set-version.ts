@@ -1,6 +1,11 @@
-import * as semver from 'semver';
+import { ReleaseType, inc } from 'semver';
 
-import { createGraph, createPackageMap, Registry, isLocal } from '../internal/registry';
+import {
+  createGraph,
+  createPackageMap,
+  Registry,
+  isLocal,
+} from '../internal/registry';
 import { updatePackages } from '../internal/fs';
 import { getVersionOf } from './get-version';
 
@@ -10,7 +15,7 @@ export async function bumpVersionOf({
   registry,
 }: {
   name: string;
-  type: semver.ReleaseType;
+  type: ReleaseType;
   registry: Registry;
 }) {
   const currentVersion = await getVersionOf({ name, registry });
@@ -19,7 +24,7 @@ export async function bumpVersionOf({
     throw new Error(`Module ${name} has multiple version`);
   }
 
-  const version = semver.inc(currentVersion, type);
+  const version = inc(currentVersion, type);
 
   if (!version) {
     throw new Error(`Failed to bump ${module} to ${type}`);

@@ -1,69 +1,58 @@
 import { resolve } from 'path';
 import setup from '../../src/internal/setup';
-import { findLocations } from '../../src/internal/manager';
-import { createRegistry } from '../../src/internal/registry';
-import { checkIntegrity, hasIntegrity } from '../../src/api/integrity';
+import { managers } from '../common';
+import api from '../../src/api';
+import { hasIntegrity } from '../../src/api/integrity';
 
-describe('integrity', () => {
-  ['lerna', 'yarn'].forEach(manager => {
-    test(manager, async () => {
+describe('Integrity', () => {
+  managers.forEach(manager => {
+    describe(manager, () => {
       const cwd = resolve(__dirname, `../../example/${manager}`);
 
-      setup.cwd = cwd;
-
-      const locations = await findLocations();
-      const registry = await createRegistry(locations);
-
-      // integrity of a single package
-      const graphqlResult = await checkIntegrity({
-        name: 'graphql',
-        registry,
+      beforeEach(async () => {
+        setup.cwd = cwd;
       });
 
-      expect(graphqlResult.graphql.integrity).toEqual(true);
-      expect(graphqlResult.graphql.parents).toHaveProperty('@example/core');
-      expect(graphqlResult.graphql.parents).toHaveProperty('@example/react');
-      expect(graphqlResult.graphql.parents).toHaveProperty('@example/angular');
-      expect(graphqlResult.graphql.parents).toHaveProperty(
-        `${manager}-example`,
-      );
-      expect(hasIntegrity(graphqlResult)).toEqual(true);
+      test('single dependency (external)', async () => {
+        const result = await api.check('graphql');
 
-      // integrity of an unused package
-      const unusedResult = await checkIntegrity({
-        name: '@example/angular',
-        registry,
+        expect(result.graphql.integrity).toEqual(true);
+        expect(result.graphql.parents).toHaveProperty('@example/core');
+        expect(result.graphql.parents).toHaveProperty('@example/react');
+        expect(result.graphql.parents).toHaveProperty('@example/angular');
+        expect(result.graphql.parents).toHaveProperty(`${manager}-example`);
+        expect(hasIntegrity(result)).toEqual(true);
       });
 
-      expect(unusedResult['@example/angular'].integrity).toEqual(true);
+      test('unused package (local)', async () => {
+        const result = await api.check('@example/angular');
 
-      // integrity of a package that is used once
-      const onceResult = await checkIntegrity({
-        name: 'react',
-        registry,
+        expect(result['@example/angular'].integrity).toEqual(true);
       });
 
-      expect(onceResult['react'].integrity).toEqual(true);
+      test('package used once (external)', async () => {
+        const result = await api.check('react');
 
-      // integrity of all packages
-      const {
-        graphql,
-        ['@example/angular']: exampleAngular,
-        react,
-      } = await checkIntegrity({
-        registry,
+        expect(result['react'].integrity).toEqual(true);
       });
+      test('of all', async () => {
+        const {
+          graphql,
+          ['@example/angular']: exampleAngular,
+          react,
+        } = await api.check();
 
-      // graphql
-      expect(graphql.integrity).toEqual(true);
-      expect(graphql.parents).toHaveProperty('@example/core');
-      expect(graphql.parents).toHaveProperty('@example/react');
-      expect(graphql.parents).toHaveProperty('@example/angular');
-      expect(graphql.parents).toHaveProperty(`${manager}-example`);
-      // angular
-      expect(exampleAngular.integrity).toEqual(true);
-      // react
-      expect(react.integrity).toEqual(true);
+        // graphql
+        expect(graphql.integrity).toEqual(true);
+        expect(graphql.parents).toHaveProperty('@example/core');
+        expect(graphql.parents).toHaveProperty('@example/react');
+        expect(graphql.parents).toHaveProperty('@example/angular');
+        expect(graphql.parents).toHaveProperty(`${manager}-example`);
+        // angular
+        expect(exampleAngular.integrity).toEqual(true);
+        // react
+        expect(react.integrity).toEqual(true);
+      });
     });
   });
 });

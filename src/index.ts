@@ -2,20 +2,14 @@
 
 import * as program from 'commander';
 import * as semver from 'semver';
-import chalk from 'chalk';
+// import chalk from 'chalk';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const log = console.log;
+// const log = console.log;
 
-import { findLocations } from './internal/manager';
-import { createRegistry, isLocal, ensureVersionOf } from './internal/registry';
-import { isTag } from './internal/utils';
-import { fetchVersionByTag } from './internal/npm-api';
-import { checkIntegrity, hasIntegrity } from './api/integrity';
-import { addDependency } from './api/add';
-import { setVersionOf, bumpVersionOf } from './api/set-version';
-import { getVersionOf } from './api/get-version';
+// import { hasIntegrity } from './api/integrity';
+import api from './api';
 
 const pkg: any = JSON.parse(
   readFileSync(resolve(process.cwd(), 'package.json'), {
@@ -30,26 +24,21 @@ program
   .alias('c')
   .description('Checks integrity')
   .action(async (name: string) => {
-    log(
-      chalk.blue(
-        'Checking integrity',
-        name ? `of ${chalk.bold(name)} package` : '',
-      ),
-    );
+    // log(
+    //   chalk.blue(
+    //     'Checking integrity',
+    //     name ? `of ${chalk.bold(name)} package` : '',
+    //   ),
+    // );
 
-    const registry = await createRegistry(await findLocations());
+    await api.check(name);
 
-    const results = await checkIntegrity({
-      name,
-      registry,
-    });
-
-    if (hasIntegrity(results)) {
-      log(chalk.green.bold('All good'));
-    } else {
-      // FIX: it always shows All good...
-      log(chalk.red('Multiple versions'));
-    }
+    // if (hasIntegrity(results)) {
+    //   log(chalk.green.bold('All good'));
+    // } else {
+    //   // FIX: it always shows All good...
+    //   log(chalk.red('Multiple versions'));
+    // }
   });
 
 program
@@ -60,37 +49,12 @@ program
   .option('-P, --package <name>', 'Saves in a package')
   .action(
     async (name: string, version: string | undefined, cmd: program.Command) => {
-      if (!version) {
-        version = 'latest';
-      }
-
-      const registry = await createRegistry(await findLocations());
-
-      await addDependency({
+      await api.add({
         name,
-        registry,
+        version,
         type: cmd['save-dev'] ? 'dev' : 'direct',
         parent: cmd.root ? 'root' : cmd.package,
-        version: await ensureVersionOf({
-          name,
-          version,
-          registry,
-        }),
       });
-
-      // log(chalk.blue('Adding', chalk.bold(name)));
-      // try {
-      //   const manager = new Manager();
-      //   await manager.add({
-      //     name,
-      //     versionOrTag,
-      //     type: cmd['save-dev'] ? 'dev' : 'direct',
-      //     space: cmd.root ? 'root' : cmd.package,
-      //   });
-      //   log(chalk.green('Added', chalk.bold(name)));
-      // } catch (e) {
-      //   handleError(e, ['Failed to add', chalk.bold(name)]);
-      // }
     },
   );
 
@@ -100,41 +64,7 @@ program
   .description('Sets a version of a package')
   .option('-f, --force', 'Force setting a new version, skips integrity check')
   .action(async (name: string, version: string) => {
-    const registry = await createRegistry(await findLocations());
-
-    if (isTag(version) && !isLocal(name, registry)) {
-      version = await fetchVersionByTag(name, version);
-    }
-
-    if (isLocal(name, registry) && isTag(version)) {
-      throw new Error(`Can't use a dist-tag on a local package ${name}`);
-    }
-
-    await setVersionOf({
-      name,
-      version,
-      registry,
-    });
-
-    // log(chalk.blue('Updating', chalk.bold(name), `(trying ${versionOrTag})`));
-    // try {
-    //   const manager = new Manager();
-    //   const version = versionOrTag.includes('.')
-    //     ? versionOrTag
-    //     : await manager.fetchVersion(name, versionOrTag);
-    //   if (!semver.valid(version)) {
-    //     throw new Error(`Invalid version: ${version}`);
-    //   }
-    //   const updates = await manager.setVersion(
-    //     name,
-    //     version,
-    //     cmd.force === true,
-    //   );
-    //   printUpdates(updates);
-    //   log(chalk.green('Updated', chalk.bold(name), 'to', chalk.bold(version)));
-    // } catch (e) {
-    //   handleError(e, ['Failed to update', chalk.bold(name)]);
-    // }
+    await api.set(name, version);
   });
 
 program
@@ -142,12 +72,7 @@ program
   .alias('g')
   .description('Gets a version of a package')
   .action(async (name: string) => {
-    const registry = await createRegistry(await findLocations());
-
-    const result = await getVersionOf({
-      name,
-      registry,
-    });
+    const result = await api.get(name);
 
     if (typeof result === 'string') {
       console.log(result);
@@ -155,14 +80,6 @@ program
       console.log(`Module ${name} has multiple versions`);
       console.log(result);
     }
-
-    // try {
-    //   const manager = new Manager();
-    //   const version = await manager.getVersion(name);
-    //   log(chalk.green(chalk.bold(name), 'is', chalk.bold(version)));
-    // } catch (e) {
-    //   handleError(e, ['Failed to get a version', chalk.bold(name)]);
-    // }
   });
 
 program
@@ -171,30 +88,7 @@ program
   .description('Bumps a version of a package')
   .option('-i, --preid <preid>', 'type of prerelease - x.x.x-[PREID].x')
   .action(async (name: string, type: semver.ReleaseType) => {
-    const registry = await createRegistry(await findLocations());
-
-    await bumpVersionOf({
-      name,
-      type,
-      registry,
-    });
-    // log(chalk.blue('Bumping', chalk.bold(name), 'by', chalk.bold(type)));
-    // try {
-    //   const manager = new Manager();
-    //   const version = semver.inc(
-    //     await manager.getVersion(name),
-    //     type,
-    //     cmd.preid || 'beta',
-    //   );
-    //   if (!version) {
-    //     throw new Error(`Failed to bump version of ${name}`);
-    //   }
-    //   const updates = await manager.setVersion(name, version);
-    //   printUpdates(updates);
-    //   log(chalk.green('Bumped', chalk.bold(name), 'to', chalk.bold(version)));
-    // } catch (e) {
-    //   handleError(e, ['Failed to bump', chalk.bold(name)]);
-    // }
+    await api.bump(name, type);
   });
 
 program.parse(process.argv);

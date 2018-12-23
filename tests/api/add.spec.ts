@@ -1,44 +1,68 @@
 import { resolve } from 'path';
 import setup from '../../src/internal/setup';
-import { addDependency } from '../../src/api/add';
+import { managers } from '../common';
+import api from '../../src/api';
 import { fs } from '../../src/internal/fs';
-import { findLocations } from '../../src/internal/manager';
-import { createRegistry } from '../../src/internal/registry';
 
-describe('Set version', () => {
+describe('Add dependency', () => {
   afterEach(() => {
     setup.fs = fs;
   });
 
-  ['lerna', 'yarn'].forEach(manager => {
-    test(manager, async () => {
+  managers.forEach(manager => {
+    describe(manager, () => {
       const cwd = resolve(__dirname, `../../example/${manager}`);
-      setup.cwd = cwd;
 
-      const writeFile = jest.fn().mockResolvedValue(Promise.resolve());
-
-      setup.fs = {
-        writeFile,
-        readFile: fs.readFile,
-      };
-
-      const locations = await findLocations();
-      const registry = await createRegistry(locations);
-
-      // make changes
-      await addDependency({
-        name: 'prettier',
-        version: '1.15.0',
-        parent: `${manager}-example`,
-        type: 'dev',
-        registry,
+      beforeEach(async () => {
+        setup.cwd = cwd;
       });
 
-      expect(writeFile).toHaveBeenCalledTimes(1);
-      expect(JSON.parse(writeFile.mock.calls[0][1])).toMatchObject({
-        devDependencies: {
-          prettier: '1.15.0',
-        },
+      test('external dependency', async () => {
+        const writeFile = jest.fn().mockResolvedValue(Promise.resolve());
+
+        setup.fs = {
+          writeFile,
+          readFile: fs.readFile,
+        };
+
+        await api.add({
+          name: 'prettier',
+          version: '1.15.0',
+          parent: `${manager}-example`,
+          type: 'dev',
+        });
+
+        expect(writeFile).toHaveBeenCalledTimes(1);
+
+        expect(JSON.parse(writeFile.mock.calls[0][1])).toMatchObject({
+          name: `${manager}-example`,
+          devDependencies: {
+            prettier: '1.15.0',
+          },
+        });
+      });
+
+      test('local package', async () => {
+        const writeFile = jest.fn().mockResolvedValue(Promise.resolve());
+
+        setup.fs = {
+          writeFile,
+          readFile: fs.readFile,
+        };
+
+        await api.add({
+          name: '@example/angular',
+          parent: `${manager}-example`,
+          type: 'dev',
+        });
+
+        expect(writeFile).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(writeFile.mock.calls[0][1])).toMatchObject({
+          name: `${manager}-example`,
+          devDependencies: {
+            '@example/angular': '1.0.0',
+          },
+        });
       });
     });
   });
