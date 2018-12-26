@@ -70,7 +70,7 @@ interface DeleteEvent {
 }
 
 export function updatePackages() {
-  const changesMap: {
+  let changesMap: {
     [location: string]: Change[];
   } = {};
 
@@ -84,6 +84,7 @@ export function updatePackages() {
     },
     async commit() {
       await Promise.all(Object.keys(changesMap).map(update));
+      changesMap = {};
     },
   };
 
