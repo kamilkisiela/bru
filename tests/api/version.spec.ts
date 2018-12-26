@@ -17,7 +17,8 @@ describe('Version', () => {
       });
 
       test('get version', async () => {
-        expect(await api.get('graphql')).toEqual('14.0.2');
+        const result = await api.get('graphql');
+        expect(result.payload.version).toEqual('14.0.2');
       });
 
       test('set a version of an external dependency', async () => {

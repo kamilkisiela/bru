@@ -1,12 +1,50 @@
-import { createRegistry, ensureVersionOf, isLocal } from '../internal/registry';
-import { findLocations } from '../internal/manager';
-import { addDependency } from './add';
-import { checkIntegrity } from './integrity';
+import { ReleaseType } from 'semver';
+// api
+import { addDependency, AddEvents } from './add';
+import {
+  checkIntegrity,
+  IntegrityEvents,
+  IntegrityResult,
+  hasIntegrity,
+  NoIntegrityEvent,
+} from './check';
+import { setVersionOf, bumpVersionOf, SetEvents } from './set';
+import { getVersionOf, GetEvents } from './get';
+// internal
 import { isTag } from '../internal/utils';
 import { fetchVersionByTag } from '../internal/npm-api';
-import { setVersionOf, bumpVersionOf } from './set-version';
-import { getVersionOf } from './get-version';
-import { ReleaseType } from 'semver';
+import { TagOnLocalPackageEvent, CommonEvents } from '../internal/events';
+import { findLocations } from '../internal/manager';
+import { Event } from '../internal/events';
+import {
+  createRegistry,
+  ensureVersionOf,
+  isLocal,
+  Dependency,
+} from '../internal/registry';
+import setup from '../internal/setup';
+
+export enum ResultTypes {
+  Add = '[Add] result',
+  Set = '[Set] result',
+  Bump = '[Bump] result',
+  Get = '[Get] result',
+  Check = '[Check] result',
+}
+
+export type Events =
+  | AddEvents
+  | IntegrityEvents
+  | SetEvents
+  | GetEvents
+  | CommonEvents;
+
+export type Results =
+  | AddDependencyResult
+  | SetVersionResult
+  | BumpVersionResult
+  | GetVersionResult
+  | CheckIntegrityResult;
 
 export default {
   async add({
@@ -17,7 +55,7 @@ export default {
   }: {
     name: string;
     version?: string;
-    parent: string;
+    parent: string | null;
     type: 'dev' | 'direct';
   }) {
     if (!version) {
@@ -26,25 +64,49 @@ export default {
 
     const registry = await createRegistry(await findLocations());
 
+    version = await ensureVersionOf({
+      name,
+      version,
+      registry,
+    });
+
+    if (parent === null) {
+      parent = registry[setup.cwd].name;
+    }
+
     await addDependency({
       name,
       registry,
       type,
       parent,
-      version: await ensureVersionOf({
-        name,
-        version,
-        registry,
-      }),
+      version,
+    });
+
+    return new AddDependencyResult({
+      name,
+      version,
+      type,
+      parent,
     });
   },
   async check(name?: string) {
     const registry = await createRegistry(await findLocations());
 
-    return checkIntegrity({
+    const result = await checkIntegrity({
       name,
       registry,
     });
+
+    if (hasIntegrity(result)) {
+      return new CheckIntegrityResult({
+        name,
+        result,
+      });
+    } else {
+      throw new NoIntegrityEvent({
+        result,
+      });
+    }
   },
   async set(name: string, version: string) {
     const registry = await createRegistry(await findLocations());
@@ -54,7 +116,10 @@ export default {
     }
 
     if (isLocal(name, registry) && isTag(version)) {
-      throw new Error(`Can't use a dist-tag on a local package ${name}`);
+      throw new TagOnLocalPackageEvent({
+        name,
+      });
+      // throw new Error(`Can't use a dist-tag on a local package ${name}`);
     }
 
     await setVersionOf({
@@ -62,22 +127,94 @@ export default {
       version,
       registry,
     });
+
+    return new SetVersionResult({
+      name,
+      version,
+    });
   },
   async bump(name: string, type: ReleaseType) {
     const registry = await createRegistry(await findLocations());
 
-    await bumpVersionOf({
+    const version = await bumpVersionOf({
       name,
       type,
       registry,
+    });
+
+    return new BumpVersionResult({
+      name,
+      version,
     });
   },
   async get(name: string) {
     const registry = await createRegistry(await findLocations());
 
-    return getVersionOf({
+    const version = await getVersionOf({
       name,
       registry,
     });
-  }
+
+    return new GetVersionResult({
+      name,
+      version,
+    });
+  },
 };
+
+export class AddDependencyResult implements Event {
+  type = ResultTypes.Add;
+
+  constructor(
+    public payload: {
+      name: string;
+      version: string;
+      type: 'dev' | 'direct';
+      parent: string;
+    },
+  ) {}
+}
+
+export class SetVersionResult implements Event {
+  type = ResultTypes.Set;
+
+  constructor(
+    public payload: {
+      name: string;
+      version: string;
+    },
+  ) {}
+}
+
+export class BumpVersionResult implements Event {
+  type = ResultTypes.Bump;
+
+  constructor(
+    public payload: {
+      name: string;
+      version: string;
+    },
+  ) {}
+}
+
+export class GetVersionResult implements Event {
+  type = ResultTypes.Get;
+
+  constructor(
+    public payload: {
+      name: string;
+      version: string | Dependency;
+    },
+  ) {}
+}
+
+export class CheckIntegrityResult implements Event {
+  type = ResultTypes.Check;
+
+  constructor(
+    public payload: {
+      name?: string;
+      result: IntegrityResult;
+    },
+  ) {}
+}

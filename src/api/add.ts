@@ -1,5 +1,15 @@
+// api
+import {checkIntegrity, hasIntegrity} from './check'
+// internal
 import { Registry, createPackageMap } from '../internal/registry';
 import { updatePackages } from '../internal/fs';
+import { Event } from '../internal/events';
+
+export enum AddTypes {
+  MissingLocal = '[Add] Missing local package',
+}
+
+export type AddEvents = MissingLocalPackageEvent;
 
 export interface AddInput {
   name: string;
@@ -20,7 +30,19 @@ export async function addDependency({
   const packageMap = createPackageMap(registry);
 
   if (!parent) {
-    throw new Error(`Module ${parent} is not available in your project`);
+    // throw new Error(`Module ${parent} is not available in your project`);
+    throw new MissingLocalPackageEvent({
+      name: parent
+    });
+  }
+
+  const result = await checkIntegrity({
+    name,
+    registry
+  });
+
+  if (!hasIntegrity(result)) {
+    console.log('Now it has multiple versions')
   }
 
   updater.change({
@@ -32,4 +54,14 @@ export async function addDependency({
   });
 
   await updater.commit();
+}
+
+export class MissingLocalPackageEvent implements Event {
+  type = AddTypes.MissingLocal;
+
+  constructor(
+    public payload: {
+      name: string;
+    },
+  ) {}
 }

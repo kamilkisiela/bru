@@ -1,4 +1,12 @@
+// internal
 import { createGraph, Dependency, Registry } from '../internal/registry';
+import { Event } from '../internal/events';
+
+export enum IntegrityTypes {
+  MissingPackage = '[Integrity] Missing package',
+  NoIntegrity = '[Integrity] No integrity',
+}
+export type IntegrityEvents = MissingPackageEvent | NoIntegrityEvent;
 
 interface Result {
   integrity: boolean;
@@ -45,7 +53,7 @@ function integrityOf(dep: Dependency): Result {
 
   const integrity =
     versions && versions.length > 1
-      ? versions.some((val, i, all) => all.indexOf(val) !== i)
+      ? !versions.some(ver => ver !== versions[0])
       : true;
 
   return {
@@ -60,4 +68,24 @@ export function hasIntegrity(result: IntegrityResult): boolean {
 
 function isString(v: any): v is string {
   return typeof v === 'string';
+}
+
+export class MissingPackageEvent implements Event {
+  type = IntegrityTypes.MissingPackage;
+
+  constructor(
+    public payload: {
+      name: string;
+    },
+  ) {}
+}
+
+export class NoIntegrityEvent implements Event {
+  type = IntegrityTypes.NoIntegrity;
+
+  constructor(
+    public payload: {
+      result: IntegrityResult;
+    },
+  ) {}
 }

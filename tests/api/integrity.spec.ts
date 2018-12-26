@@ -1,10 +1,54 @@
 import { resolve } from 'path';
 import setup from '../../src/internal/setup';
+import { updatePackages } from '../../src/internal/fs';
 import { managers } from '../common';
 import api from '../../src/api';
-import { hasIntegrity } from '../../src/api/integrity';
+import { hasIntegrity, NoIntegrityEvent } from '../../src/api/check';
 
 describe('Integrity', () => {
+  test('hasIntegrity', () => {
+    // all true
+    expect(
+      hasIntegrity({
+        foo: { integrity: true, parents: {} },
+        bar: { integrity: true, parents: {} },
+      }),
+    ).toEqual(true);
+
+    // all false
+    expect(
+      hasIntegrity({
+        foo: { integrity: false, parents: {} },
+        bar: { integrity: false, parents: {} },
+      }),
+    ).toEqual(false);
+
+    // all and one false
+    expect(
+      hasIntegrity({
+        foo: { integrity: true, parents: {} },
+        bar: { integrity: false, parents: {} },
+      }),
+    ).toEqual(false);
+
+    // single and true
+    expect(
+      hasIntegrity({
+        foo: { integrity: true, parents: {} },
+      }),
+    ).toEqual(true);
+
+    // single and false
+    expect(
+      hasIntegrity({
+        foo: { integrity: false, parents: {} },
+      }),
+    ).toEqual(false);
+
+    // empty
+    expect(hasIntegrity({})).toEqual(true);
+  });
+
   managers.forEach(manager => {
     describe(manager, () => {
       const cwd = resolve(__dirname, `../../example/${manager}`);
@@ -13,34 +57,84 @@ describe('Integrity', () => {
         setup.cwd = cwd;
       });
 
-      test('single dependency (external)', async () => {
-        const result = await api.check('graphql');
+      test('single dependency (external) with multiple versions', async () => {
+        const updater = updatePackages();
 
-        expect(result.graphql.integrity).toEqual(true);
-        expect(result.graphql.parents).toHaveProperty('@example/core');
-        expect(result.graphql.parents).toHaveProperty('@example/react');
-        expect(result.graphql.parents).toHaveProperty('@example/angular');
-        expect(result.graphql.parents).toHaveProperty(`${manager}-example`);
-        expect(hasIntegrity(result)).toEqual(true);
+        updater.change({
+          type: 'UPDATE',
+          name: 'graphql',
+          version: '14.0.3',
+          location: cwd
+        });
+        await updater.commit();
+
+        let event: NoIntegrityEvent | undefined = undefined;
+        
+        try {
+          await api.check('graphql');
+        } catch (e) {
+          event = e;
+        }
+
+        updater.change({
+          type: 'UPDATE',
+          name: 'graphql',
+          version: '14.0.2',
+          location: cwd
+        });
+        await updater.commit();
+
+        expect(event).toBeDefined();
+
+        const { payload } = event!;
+
+        expect(payload.result.graphql.integrity).toEqual(false);
+        expect(payload.result.graphql.parents).toHaveProperty('@example/core');
+        expect(payload.result.graphql.parents).toHaveProperty('@example/react');
+        expect(payload.result.graphql.parents).toHaveProperty(
+          '@example/angular',
+        );
+        expect(payload.result.graphql.parents).toHaveProperty(
+          `${manager}-example`,
+        );
+        expect(hasIntegrity(payload.result)).toEqual(false);
+      });
+
+      test('single dependency (external)', async () => {
+        const { payload } = await api.check('graphql');
+
+        expect(payload.name).toEqual('graphql');
+        expect(payload.result.graphql.integrity).toEqual(true);
+        expect(payload.result.graphql.parents).toHaveProperty('@example/core');
+        expect(payload.result.graphql.parents).toHaveProperty('@example/react');
+        expect(payload.result.graphql.parents).toHaveProperty(
+          '@example/angular',
+        );
+        expect(payload.result.graphql.parents).toHaveProperty(
+          `${manager}-example`,
+        );
+        expect(hasIntegrity(payload.result)).toEqual(true);
       });
 
       test('unused package (local)', async () => {
-        const result = await api.check('@example/angular');
+        const { payload } = await api.check('@example/angular');
 
-        expect(result['@example/angular'].integrity).toEqual(true);
+        expect(payload.result['@example/angular'].integrity).toEqual(true);
       });
 
       test('package used once (external)', async () => {
-        const result = await api.check('react');
+        const { payload } = await api.check('react');
 
-        expect(result['react'].integrity).toEqual(true);
+        expect(payload.result['react'].integrity).toEqual(true);
       });
       test('of all', async () => {
+        const { payload } = await api.check();
+
         const {
           graphql,
           ['@example/angular']: exampleAngular,
           react,
-        } = await api.check();
+        } = payload.result;
 
         // graphql
         expect(graphql.integrity).toEqual(true);
