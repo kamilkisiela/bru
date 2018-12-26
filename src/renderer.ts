@@ -73,7 +73,7 @@ export const defaultRenderer: Renderer = {
   },
 };
 
-export function isEvent(event: Events | Error): event is Events {
+export function isEvent(event: any): event is Events {
   return !!(event as any).type;
 }
 
