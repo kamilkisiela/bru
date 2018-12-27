@@ -1,0 +1,7 @@
+{
+  "files.exclude": {
+    "build": true,
+    "coverage": true,
+    "yarn.lock": true
+  }
+}

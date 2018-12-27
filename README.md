@@ -32,10 +32,10 @@ USAGE
 # Commands
 
 * [`bru add <package> [versionOrTag]`](#bru-add-package-versionortag)
-* [`bru bump <package> <TYPE>`](#bru-bump-package-type)
+* [`bru bump <package> <type>`](#bru-bump-package-type)
 * [`bru set <package> <versionOrTag>`](#bru-set-package-versionortag)
 * [`bru get [package]`](#bru-get-package)
-* [`bru check`](#bru-check)
+* [`bru check [package]`](#bru-check)
 
 
 ## `bru add <package> [versionOrTag]`
