@@ -10,6 +10,7 @@ import {
 } from './check';
 import { setVersionOf, bumpVersionOf, SetEvents } from './set';
 import { getVersionOf, GetEvents } from './get';
+import { removeDependency, RemoveEvents } from './remove';
 // internal
 import { isTag } from '../internal/utils';
 import { fetchVersionByTag } from '../internal/npm-api';
@@ -31,10 +32,12 @@ export enum ResultTypes {
   Bump = '[Bump] result',
   Get = '[Get] result',
   Check = '[Check] result',
+  Remove = '[Remove] result',
 }
 
 export type Events =
   | AddEvents
+  | RemoveEvents
   | IntegrityEvents
   | SetEvents
   | GetEvents
@@ -42,6 +45,7 @@ export type Events =
 
 export type Results =
   | AddDependencyResult
+  | RemoveDependencyResult
   | SetVersionResult
   | BumpVersionResult
   | GetVersionResult
@@ -101,6 +105,36 @@ export default {
       name,
       version,
       type,
+      parent,
+    });
+  },
+  async remove({ name, parent }: { name: string; parent: string | null }) {
+    const locations = await findLocations();
+    const registry = await createRegistry(locations);
+
+    if (parent === null) {
+      parent = registry[setup.cwd].name;
+    }
+
+    await removeDependency({
+      name,
+      registry,
+      parent,
+    });
+
+    await runHook(
+      {
+        type: 'remove',
+        data: {
+          name,
+          parent,
+        },
+      },
+      locations,
+    );
+
+    return new RemoveDependencyResult({
+      name,
       parent,
     });
   },
@@ -208,6 +242,17 @@ export class AddDependencyResult implements Event {
       name: string;
       version: string;
       type: 'dev' | 'direct';
+      parent: string;
+    },
+  ) {}
+}
+
+export class RemoveDependencyResult implements Event {
+  type = ResultTypes.Remove;
+
+  constructor(
+    public payload: {
+      name: string;
       parent: string;
     },
   ) {}
