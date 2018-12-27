@@ -1,4 +1,5 @@
 import * as symbols from 'log-symbols';
+import chalk from 'chalk';
 // api
 import {
   Events,
@@ -24,6 +25,7 @@ import {
 } from './api/check';
 // internal
 import { CommonTypes, TagOnLocalPackageEvent } from './internal/events';
+import { Dependency } from './internal/registry';
 
 export interface Renderer {
   error(event: Events | Error): void;
@@ -78,29 +80,37 @@ export function isEvent(event: any): event is Events {
 
 function renderMissingLocal(event: MissingLocalPackageEvent) {
   const { name } = event.payload;
-  console.log(asError(`Module ${name} is not available in your project`));
+  console.log(
+    asError(`Module ${chalk.bold(name)} is not available in your project`),
+  );
 }
 
 function renderMissingPackage(
   event: MissingPackageEvent | MissingLocalPackageCheckEvent,
 ) {
   const { name } = event.payload;
-  console.log(asError(`Module ${name} is not available in your project`));
+  console.log(
+    asError(`Module ${chalk.bold(name)} is not available in your project`),
+  );
 }
 
 function renderIncorrectBympType(event: IncorrectBumpTypeEvent) {
   const { name, type } = event.payload;
-  console.log(asError(`Failed to bump ${name} to ${type}`));
+  console.log(
+    asError(`Failed to bump ${chalk.bold(name)} to ${chalk.bold(type)}`),
+  );
 }
 
 function renderMultipleVersions(event: MultipleVersionEvent) {
   const { name } = event.payload;
-  console.log(asError(`Module ${name} has multiple versions`));
+  console.log(asError(`Module ${chalk.bold(name)} has multiple versions`));
 }
 
 function renderTagOnLocal(event: TagOnLocalPackageEvent) {
   const { name } = event.payload;
-  console.log(asError(`Can't use a dist-tag on a local package ${name}`));
+  console.log(
+    asError(`Can't use a dist-tag on a local package ${chalk.bold(name)}`),
+  );
 }
 
 function renderNoIntegrity(event: NoIntegrityEvent) {
@@ -114,40 +124,9 @@ function renderNoIntegrity(event: NoIntegrityEvent) {
       const info = result[packageName];
 
       if (!info.integrity) {
-        // store <version, packages> map
-        const versions: { [version: string]: string[] } = {};
-
         logger.schedule(withIndent(1, packageName));
 
-        // assign packages to versions
-        for (const name in info.parents) {
-          if (info.parents.hasOwnProperty(name)) {
-            const parent = info.parents[name];
-
-            if (parent.direct) {
-              if (!versions[parent.direct]) {
-                versions[parent.direct] = [];
-              }
-              versions[parent.direct].push(name);
-            }
-
-            if (parent.dev) {
-              if (!versions[parent.dev]) {
-                versions[parent.dev] = [];
-              }
-              versions[parent.dev].push(name);
-            }
-          }
-        }
-
-        Object.keys(versions).forEach(version => {
-          const packages = versions[version].filter(
-            (val, i, all) => all.indexOf(val) === i,
-          );
-
-          // version: p,a,c,k,a,g,e,s
-          logger.schedule(withIndent(2, `${version}: ${packages.join(', ')}`));
-        });
+        printDependency(info.parents, logger.schedule);
 
         // emit logs
         logger.commit();
@@ -162,26 +141,79 @@ function renderAddResult(result: AddDependencyResult): void {
   const { name, parent, version, type } = result.payload;
   console.log(
     asSuccess(
-      `Package ${name}@${version} added to ${parent} as ${type} dependency`,
+      `Package ${chalk.bold(name)}@${chalk.bold(version)} added to ${chalk.bold(
+        parent,
+      )} as ${chalk.bold(type)} dependency`,
     ),
   );
 }
 function renderBumpResult(result: BumpVersionResult): void {
   const { name, version } = result.payload;
-  console.log(asSuccess(`${name} was bumped to ${version}`));
+  console.log(
+    asSuccess(`${chalk.bold(name)} was bumped to ${chalk.bold(version)}`),
+  );
 }
 function renderCheckResult(result: CheckIntegrityResult): void {
   const { name } = result.payload;
-  console.log(asSuccess(`No multiple versions ${name ? `of ${name}` : ''}`));
+  console.log(
+    asSuccess(`No multiple versions ${name ? `of ${chalk.bold(name)}` : ''}`),
+  );
 }
 function renderGetResult(result: GetVersionResult): void {
   const { name, version } = result.payload;
-  console.log(asSuccess(`${name} is ${version}`));
+  const logger = useLogger();
+
+  if (typeof version === 'string') {
+    logger.schedule(asSuccess(`${chalk.bold(name)} is ${chalk.bold(version)}`));
+  } else {
+    logger.schedule(asSuccess(`${chalk.bold(name)}`));
+    printDependency(version, logger.schedule);
+  }
+
+  logger.commit();
 }
 function renderSetResult(result: SetVersionResult): void {
   const { name, version } = result.payload;
-  console.log(asSuccess(`${name} is now ${version}`));
+  console.log(asSuccess(`${chalk.bold(name)} is now ${chalk.bold(version)}`));
 }
+
+// other
+
+function printDependency(dep: Dependency, onLog: (msg: string) => void) {
+  const versions: { [version: string]: string[] } = {};
+
+  // assign packages to versions
+  for (const name in dep) {
+    if (dep.hasOwnProperty(name)) {
+      const parent = dep[name];
+
+      if (parent.direct) {
+        if (!versions[parent.direct]) {
+          versions[parent.direct] = [];
+        }
+        versions[parent.direct].push(name);
+      }
+
+      if (parent.dev) {
+        if (!versions[parent.dev]) {
+          versions[parent.dev] = [];
+        }
+        versions[parent.dev].push(name);
+      }
+    }
+  }
+
+  Object.keys(versions).forEach(version => {
+    const packages = versions[version].filter(
+      (val, i, all) => all.indexOf(val) === i,
+    );
+
+    // version: p,a,c,k,a,g,e,s
+    onLog(withIndent(2, `${version}: ${packages.join(', ')}`));
+  });
+}
+
+// utils
 
 function useLogger() {
   let logs: string[] = [];
