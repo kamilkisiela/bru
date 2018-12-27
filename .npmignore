@@ -1,5 +1,8 @@
+.circleci/
+.vscode/
 example/
 src/
+tests/
 .npmrc
 jest.config.js
 tsconfig.json
