@@ -6,12 +6,5 @@
         "@example/core": "1.1.0",
         "@angular/core": "6.1.10",
         "graphql": "14.0.2"
-    },
-    "config": {
-        "bru": {
-            "hooks": {
-                "version": "./version-hook.js"
-            }
-        }
     }
 }
