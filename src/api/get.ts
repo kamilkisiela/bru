@@ -1,5 +1,5 @@
 // api
-import { checkIntegrity } from './check';
+import { checkIntegrity, hasIntegrity } from './check';
 // internal
 import { createGraph, Dependency, Registry } from '../internal/registry';
 import { Event } from '../internal/events';
@@ -27,12 +27,12 @@ export async function getVersionOf({
 
   const dep = graph.getNodeData(name);
 
-  const hasIntegrity = await checkIntegrity({
+  const integrity = await checkIntegrity({
     name,
     registry,
   });
 
-  if (hasIntegrity) {
+  if (hasIntegrity(integrity)) {
     const first = dep[Object.keys(dep)[0]];
 
     return (first.direct || first.dev)!;
