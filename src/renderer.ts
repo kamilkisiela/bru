@@ -1,6 +1,15 @@
 import * as symbols from 'log-symbols';
 // api
-import { Events, Results } from './api';
+import {
+  Events,
+  Results,
+  ResultTypes,
+  AddDependencyResult,
+  BumpVersionResult,
+  CheckIntegrityResult,
+  GetVersionResult,
+  SetVersionResult,
+} from './api';
 import { AddTypes, MissingLocalPackageEvent } from './api/add';
 import { GetTypes, MissingPackageEvent } from './api/get';
 import {
@@ -31,6 +40,14 @@ const errorHandlers = {
   [IntegrityTypes.NoIntegrity]: renderNoIntegrity,
 };
 
+const resultHandlers = {
+  [ResultTypes.Add]: renderAddResult,
+  [ResultTypes.Bump]: renderBumpResult,
+  [ResultTypes.Check]: renderCheckResult,
+  [ResultTypes.Get]: renderGetResult,
+  [ResultTypes.Set]: renderSetResult,
+};
+
 export const defaultRenderer: Renderer = {
   error(event) {
     if (isEvent(event)) {
@@ -43,14 +60,21 @@ export const defaultRenderer: Renderer = {
       console.error(event);
     }
   },
-  success() {
-    console.log(asSuccess('Success!'));
+  success(result: Results) {
+    if (resultHandlers[result.type]) {
+      // FIX: it ,---,*
+      (resultHandlers[result.type] as any)(result);
+    } else {
+      console.log(asSuccess('Success!'));
+    }
   },
 };
 
 export function isEvent(event: any): event is Events {
   return !!(event as any).type;
 }
+
+// Errors
 
 function renderMissingLocal(event: MissingLocalPackageEvent) {
   console.log(
@@ -73,7 +97,7 @@ function renderIncorrectBympType(event: IncorrectBumpTypeEvent) {
 }
 
 function renderMultipleVersions(event: MultipleVersionEvent) {
-  console.log(asError(`Module ${event.payload.name} has multiple version`));
+  console.log(asError(`Module ${event.payload.name} has multiple versions`));
 }
 
 function renderTagOnLocal(event: TagOnLocalPackageEvent) {
@@ -86,7 +110,7 @@ function renderNoIntegrity(event: NoIntegrityEvent) {
   const result = event.payload.result;
   const logger = useLogger();
 
-  logger.schedule(asSuccess(`Multiple versions`));
+  logger.schedule(asError(`Multiple versions found`));
 
   for (const packageName in result) {
     if (result.hasOwnProperty(packageName)) {
@@ -133,6 +157,33 @@ function renderNoIntegrity(event: NoIntegrityEvent) {
       }
     }
   }
+}
+
+// Results
+
+function renderAddResult(result: AddDependencyResult): void {
+  const { name, parent, version, type } = result.payload;
+  console.log(
+    asSuccess(
+      `Package ${name}@${version} added to ${parent} as ${type} dependency`,
+    ),
+  );
+}
+function renderBumpResult(result: BumpVersionResult): void {
+  const { name, version } = result.payload;
+  console.log(asSuccess(`${name} was bumped to ${version}`));
+}
+function renderCheckResult(result: CheckIntegrityResult): void {
+  const { name } = result.payload;
+  console.log(asSuccess(`No multiple versions ${name ? `of ${name}` : ''}`));
+}
+function renderGetResult(result: GetVersionResult): void {
+  const { name, version } = result.payload;
+  console.log(asSuccess(`${name} is ${version}`));
+}
+function renderSetResult(result: SetVersionResult): void {
+  const { name, version } = result.payload;
+  console.log(asSuccess(`${name} is now ${version}`));
 }
 
 function useLogger() {
