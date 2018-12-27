@@ -10,6 +10,7 @@ import {
   CheckIntegrityResult,
   GetVersionResult,
   SetVersionResult,
+  RemoveDependencyResult,
 } from './api';
 import { AddTypes, MissingLocalPackageEvent } from './api/add';
 import { GetTypes, MissingPackageEvent } from './api/get';
@@ -23,6 +24,10 @@ import {
   NoIntegrityEvent,
   MissingPackageEvent as MissingLocalPackageCheckEvent,
 } from './api/check';
+import {
+  RemoveTypes,
+  MissingLocalPackageEvent as MissingLocalPackageRemoveEvent,
+} from './api/remove';
 // internal
 import { CommonTypes, TagOnLocalPackageEvent } from './internal/events';
 import { Dependency } from './internal/registry';
@@ -35,6 +40,7 @@ export interface Renderer {
 const errorHandlers = {
   [CommonTypes.TagOnLocal]: renderTagOnLocal,
   [AddTypes.MissingLocal]: renderMissingLocal,
+  [RemoveTypes.MissingLocal]: renderMissingLocal,
   [GetTypes.MissingPackage]: renderMissingPackage,
   [SetTypes.IncorrectType]: renderIncorrectBympType,
   [SetTypes.Multiple]: renderMultipleVersions,
@@ -48,6 +54,7 @@ const resultHandlers = {
   [ResultTypes.Check]: renderCheckResult,
   [ResultTypes.Get]: renderGetResult,
   [ResultTypes.Set]: renderSetResult,
+  [ResultTypes.Remove]: renderRemoveResult,
 };
 
 export const defaultRenderer: Renderer = {
@@ -86,7 +93,10 @@ function renderMissingLocal(event: MissingLocalPackageEvent) {
 }
 
 function renderMissingPackage(
-  event: MissingPackageEvent | MissingLocalPackageCheckEvent,
+  event:
+    | MissingPackageEvent
+    | MissingLocalPackageCheckEvent
+    | MissingLocalPackageRemoveEvent,
 ) {
   const { name } = event.payload;
   console.log(
@@ -147,18 +157,21 @@ function renderAddResult(result: AddDependencyResult): void {
     ),
   );
 }
+
 function renderBumpResult(result: BumpVersionResult): void {
   const { name, version } = result.payload;
   console.log(
     asSuccess(`${chalk.bold(name)} was bumped to ${chalk.bold(version)}`),
   );
 }
+
 function renderCheckResult(result: CheckIntegrityResult): void {
   const { name } = result.payload;
   console.log(
     asSuccess(`No multiple versions ${name ? `of ${chalk.bold(name)}` : ''}`),
   );
 }
+
 function renderGetResult(result: GetVersionResult): void {
   const { name, version } = result.payload;
   const logger = useLogger();
@@ -172,9 +185,17 @@ function renderGetResult(result: GetVersionResult): void {
 
   logger.commit();
 }
+
 function renderSetResult(result: SetVersionResult): void {
   const { name, version } = result.payload;
   console.log(asSuccess(`${chalk.bold(name)} is now ${chalk.bold(version)}`));
+}
+
+function renderRemoveResult(result: RemoveDependencyResult): void {
+  const { name, parent } = result.payload;
+  console.log(
+    asSuccess(`${chalk.bold(name)} removed from ${chalk.bold(parent)}`),
+  );
 }
 
 // other

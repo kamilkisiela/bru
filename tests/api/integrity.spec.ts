@@ -1,11 +1,15 @@
 import { resolve } from 'path';
 import setup from '../../src/internal/setup';
-import { updatePackages } from '../../src/internal/fs';
+import { updatePackages, fs } from '../../src/internal/fs';
 import { managers } from '../common';
 import api from '../../src/api';
 import { hasIntegrity, NoIntegrityEvent } from '../../src/api/check';
 
 describe('Integrity', () => {
+  afterEach(() => {
+    setup.fs = fs;
+  });
+  
   test('hasIntegrity', () => {
     // all true
     expect(
@@ -55,10 +59,17 @@ describe('Integrity', () => {
 
       beforeEach(async () => {
         setup.cwd = cwd;
+        
       });
 
-      test('single dependency (external) with multiple versions', async () => {
+      test.skip('single dependency (external) with multiple versions', async () => {
         const updater = updatePackages();
+        const writeFile = jest.fn().mockResolvedValue(Promise.resolve());
+
+        setup.fs = {
+          writeFile,
+          readFile: fs.readFile,
+        };
 
         updater.change({
           type: 'UPDATE',
