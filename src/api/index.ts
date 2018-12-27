@@ -90,7 +90,7 @@ export default {
 
     await runHook(
       {
-        type: 'dependency',
+        type: 'add',
         data: {
           name,
           version,

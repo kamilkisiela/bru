@@ -7,9 +7,9 @@ Try it out, it's lekker bru!
 [![GitHub license](https://img.shields.io/badge/license-MIT-lightgrey.svg?maxAge=2592000)](https://raw.githubusercontent.com/kamilkisiela/bru/master/LICENSE)
 [![npm](https://img.shields.io/npm/v/bru.svg)](https://www.npmjs.com/package/bru)
 
-* [Usage](#usage)
-* [Commands](#commands)
-* [Hooks](#hooks)
+- [Usage](#usage)
+- [Commands](#commands)
+- [Hooks](#hooks)
 
 # Usage
 
@@ -31,12 +31,12 @@ USAGE
 
 # Commands
 
-* [`bru add <package> [versionOrTag]`](#bru-add-package-versionortag)
-* [`bru bump <package> <type>`](#bru-bump-package-type)
-* [`bru set <package> <versionOrTag>`](#bru-set-package-versionortag)
-* [`bru get [package]`](#bru-get-package)
-* [`bru check [package]`](#bru-check)
-
+- [`bru add <package> [versionOrTag]`](#bru-add-package-versionortag)
+- [`bru bump <package> <type>`](#bru-bump-package-type)
+- [`bru set <package> <versionOrTag>`](#bru-set-package-versionortag)
+- [`bru get [package]`](#bru-get-package)
+- [`bru remove <package>`](#bru-remove-package)
+- [`bru check [package]`](#bru-check)
 
 ## `bru add <package> [versionOrTag]`
 
@@ -47,7 +47,6 @@ USAGE
   $  bru add <package> [versionOrTag]
 
 OPTIONS
-  -f, --force
   -h, --help            show CLI help
   -D, --save-dev        as dev dependency
   -R, --root            saves in root dir (default)
@@ -63,7 +62,6 @@ USAGE
   $  bru set <package> <versionOrTag>
 
 OPTIONS
-  -f, --force
   -h, --help            show CLI help
 ```
 
@@ -79,11 +77,25 @@ OPTIONS
   -h, --help            show CLI help
 ```
 
+### `bru remove <package>`
+
+Removes a package
+
+```
+USAGE
+  $  bru remove <package>
+
+OPTIONS
+  -h, --help            show CLI help
+  -R, --root            removes from root dir (default)
+  -P, --package <name>  removes from a package
+```
+
 ## `bru bump <package> <type>`
 
 Bumps a version of a package.
 
-Available types: 
+Available types:
 
 - major
 - premajor
@@ -100,7 +112,6 @@ USAGE
 OPTIONS
   -f, --force
   -h, --help            show CLI help
-  -i, --preid <preid>   type of prerelease - x.x.x-[PREID].x
 ```
 
 ## `bru check [package]`
@@ -112,7 +123,6 @@ USAGE
   $  bru check [package]
 
 OPTIONS
-  -f, --force
   -h, --help            show CLI help
 ```
 
@@ -124,7 +134,7 @@ Bru allows to hook into changes in monorepo.
 {
   "config": {
     "bru": {
-      "listen": "./bru-events.js"
+      "hook": "./bru-events.js"
     }
   }
 }
@@ -138,9 +148,16 @@ Bru allows to hook into changes in monorepo.
  * }
  */
 module.exports = function(event) {
-  switch(event.type) {
+  switch (event.type) {
     case 'version':
       console.log('Version changed', event.data);
+      break;
+    case 'add':
+      console.log('Dependency added', event.data);
+      break;
+    case 'remove':
+      console.log('Dependency removed', event.data);
+      break;
   }
 };
 ```

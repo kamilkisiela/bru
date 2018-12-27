@@ -51,11 +51,29 @@ program
   .command('set <name> <version>')
   .alias('s')
   .description('Sets a version of a package')
-  // .option('-f, --force', 'Force setting a new version, skips integrity check')
   .action((name: string, version: string) =>
     handleAction(() => api.set(name, version), {
       renderer: defaultRenderer,
     }),
+  );
+
+program
+  .command('remove <name>')
+  .alias('s')
+  .description('Removes a package')
+  .option('-R, --root', 'Removes from the root')
+  .option('-P, --package <name>', 'Removes from a package')
+  .action((name: string, cmd: program.Command) =>
+    handleAction(
+      () =>
+        api.remove({
+          name,
+          parent: cmd.root ? null : cmd.package,
+        }),
+      {
+        renderer: defaultRenderer,
+      },
+    ),
   );
 
 program
