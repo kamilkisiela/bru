@@ -16,6 +16,7 @@ import { fetchVersionByTag } from '../internal/npm-api';
 import { TagOnLocalPackageEvent, CommonEvents } from '../internal/events';
 import { findLocations } from '../internal/manager';
 import { Event } from '../internal/events';
+import { runHook } from '../internal/hooks';
 import {
   createRegistry,
   ensureVersionOf,
@@ -62,7 +63,8 @@ export default {
       version = 'latest';
     }
 
-    const registry = await createRegistry(await findLocations());
+    const locations = await findLocations();
+    const registry = await createRegistry(locations);
 
     version = await ensureVersionOf({
       name,
@@ -81,6 +83,19 @@ export default {
       parent,
       version,
     });
+
+    await runHook(
+      {
+        type: 'dependency',
+        data: {
+          name,
+          version,
+          type,
+          parent,
+        },
+      },
+      locations,
+    );
 
     return new AddDependencyResult({
       name,
@@ -109,7 +124,8 @@ export default {
     }
   },
   async set(name: string, version: string) {
-    const registry = await createRegistry(await findLocations());
+    const locations = await findLocations();
+    const registry = await createRegistry(locations);
 
     if (isTag(version) && !isLocal(name, registry)) {
       version = await fetchVersionByTag(name, version);
@@ -127,19 +143,42 @@ export default {
       registry,
     });
 
+    await runHook(
+      {
+        type: 'version',
+        data: {
+          name,
+          version,
+        },
+      },
+      locations,
+    );
+
     return new SetVersionResult({
       name,
       version,
     });
   },
   async bump(name: string, type: ReleaseType) {
-    const registry = await createRegistry(await findLocations());
+    const locations = await findLocations();
+    const registry = await createRegistry(locations);
 
     const version = await bumpVersionOf({
       name,
       type,
       registry,
     });
+
+    await runHook(
+      {
+        type: 'version',
+        data: {
+          name,
+          version,
+        },
+      },
+      locations,
+    );
 
     return new BumpVersionResult({
       name,
