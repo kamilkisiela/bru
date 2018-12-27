@@ -230,7 +230,7 @@ function printDependency(dep: Dependency, onLog: (msg: string) => void) {
     );
 
     // version: p,a,c,k,a,g,e,s
-    onLog(withIndent(2, `${version}: ${packages.join(', ')}`));
+    onLog(withIndent(2, `${chalk.gray(version)}: ${packages.join(', ')}`));
   });
 }
 
