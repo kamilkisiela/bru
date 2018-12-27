@@ -3,8 +3,8 @@
     "version": "1.0.0",
     "description": "",
     "dependencies": {
-        "@example/core": "1.0.0",
-        "react": "16.0.0",
+        "@example/core": "1.1.0",
+        "react": "16.5.2",
         "graphql": "14.0.2"
     }
 }

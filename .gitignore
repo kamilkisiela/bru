@@ -1,5 +1,6 @@
 node_modules/
 build/
+coverage/
 yarn.lock
 yarn-error.log
 packages-lock.jcon

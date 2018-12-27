@@ -1,3 +1,5 @@
+example/
 src/
 .npmrc
+jest.config.js
 tsconfig.json
