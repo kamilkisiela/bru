@@ -28,7 +28,6 @@ export async function addDependency({
   const packageMap = createPackageMap(registry);
 
   if (!parent) {
-    // throw new Error(`Module ${parent} is not available in your project`);
     throw new MissingLocalPackageEvent({
       name: parent
     });

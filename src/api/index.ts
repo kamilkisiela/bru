@@ -119,7 +119,6 @@ export default {
       throw new TagOnLocalPackageEvent({
         name,
       });
-      // throw new Error(`Can't use a dist-tag on a local package ${name}`);
     }
 
     await setVersionOf({

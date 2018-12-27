@@ -77,33 +77,30 @@ export function isEvent(event: any): event is Events {
 // Errors
 
 function renderMissingLocal(event: MissingLocalPackageEvent) {
-  console.log(
-    asError(`Module ${event.payload.name} is not available in your project`),
-  );
+  const { name } = event.payload;
+  console.log(asError(`Module ${name} is not available in your project`));
 }
 
 function renderMissingPackage(
   event: MissingPackageEvent | MissingLocalPackageCheckEvent,
 ) {
-  console.log(
-    asError(`Module ${event.payload.name} is not available in your project`),
-  );
+  const { name } = event.payload;
+  console.log(asError(`Module ${name} is not available in your project`));
 }
 
 function renderIncorrectBympType(event: IncorrectBumpTypeEvent) {
-  console.log(
-    asError(`Failed to bump ${event.payload.name} to ${event.payload.type}`),
-  );
+  const { name, type } = event.payload;
+  console.log(asError(`Failed to bump ${name} to ${type}`));
 }
 
 function renderMultipleVersions(event: MultipleVersionEvent) {
-  console.log(asError(`Module ${event.payload.name} has multiple versions`));
+  const { name } = event.payload;
+  console.log(asError(`Module ${name} has multiple versions`));
 }
 
 function renderTagOnLocal(event: TagOnLocalPackageEvent) {
-  console.log(
-    asError(`Can't use a dist-tag on a local package ${event.payload.name}`),
-  );
+  const { name } = event.payload;
+  console.log(asError(`Can't use a dist-tag on a local package ${name}`));
 }
 
 function renderNoIntegrity(event: NoIntegrityEvent) {

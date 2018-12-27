@@ -30,7 +30,6 @@ export async function bumpVersionOf({
   const currentVersion = await getVersionOf({ name, registry });
 
   if (typeof currentVersion !== 'string') {
-    // throw new Error(`Module ${name} has multiple version`);
     throw new MultipleVersionEvent({
       name,
       dependencies: currentVersion,
@@ -40,7 +39,6 @@ export async function bumpVersionOf({
   const version = inc(currentVersion, type);
 
   if (!version) {
-    // throw new Error(`Failed to bump ${name} to ${type}`);
     throw new IncorrectBumpTypeEvent({
       name,
       type,
@@ -70,7 +68,6 @@ export async function setVersionOf({
   const graph = createGraph(registry);
 
   if (!graph.hasNode(name)) {
-    // throw new Error(`Module ${name} is not available in your project`);
     throw new MissingPackageEvent({
       name,
     });

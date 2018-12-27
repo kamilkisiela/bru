@@ -20,7 +20,6 @@ export async function getVersionOf({
   const graph = createGraph(registry);
 
   if (!graph.hasNode(name)) {
-    // throw new Error(`Module ${name} is not available in your project`);
     throw new MissingPackageEvent({
       name,
     });
