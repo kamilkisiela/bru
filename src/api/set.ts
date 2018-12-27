@@ -68,14 +68,15 @@ export async function setVersionOf({
   const updater = updatePackages();
   const packageMap = createPackageMap(registry);
   const graph = createGraph(registry);
-  const dep = graph.getNodeData(name);
 
-  if (!dep) {
+  if (!graph.hasNode(name)) {
     // throw new Error(`Module ${name} is not available in your project`);
     throw new MissingPackageEvent({
       name,
     });
   }
+
+  const dep = graph.getNodeData(name);
 
   if (isLocal(name, registry)) {
     updater.change({

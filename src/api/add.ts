@@ -1,5 +1,3 @@
-// api
-import {checkIntegrity, hasIntegrity} from './check'
 // internal
 import { Registry, createPackageMap } from '../internal/registry';
 import { updatePackages } from '../internal/fs';
@@ -34,15 +32,6 @@ export async function addDependency({
     throw new MissingLocalPackageEvent({
       name: parent
     });
-  }
-
-  const result = await checkIntegrity({
-    name,
-    registry
-  });
-
-  if (!hasIntegrity(result)) {
-    console.log('Now it has multiple versions')
   }
 
   updater.change({

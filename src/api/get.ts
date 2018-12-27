@@ -18,14 +18,15 @@ export async function getVersionOf({
   registry: Registry;
 }): Promise<string | Dependency> {
   const graph = createGraph(registry);
-  const dep = graph.getNodeData(name);
 
-  if (!dep) {
+  if (!graph.hasNode(name)) {
     // throw new Error(`Module ${name} is not available in your project`);
     throw new MissingPackageEvent({
       name,
     });
   }
+
+  const dep = graph.getNodeData(name);
 
   const hasIntegrity = await checkIntegrity({
     name,
