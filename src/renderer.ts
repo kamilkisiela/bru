@@ -1,4 +1,3 @@
-import * as symbols from 'log-symbols';
 import chalk from 'chalk';
 // api
 import {
@@ -12,8 +11,8 @@ import {
   SetVersionResult,
   RemoveDependencyResult,
 } from './api';
-import { AddTypes, MissingLocalPackageEvent } from './api/add';
-import { GetTypes, MissingPackageEvent } from './api/get';
+import {AddTypes, MissingLocalPackageEvent} from './api/add';
+import {GetTypes, MissingPackageEvent} from './api/get';
 import {
   SetTypes,
   IncorrectBumpTypeEvent,
@@ -29,8 +28,8 @@ import {
   MissingLocalPackageEvent as MissingLocalPackageRemoveEvent,
 } from './api/remove';
 // internal
-import { CommonTypes, TagOnLocalPackageEvent } from './internal/events';
-import { Dependency } from './internal/registry';
+import {CommonTypes, TagOnLocalPackageEvent} from './internal/events';
+import {Dependency} from './internal/registry';
 
 export interface Renderer {
   error(event: Events | Error): void;
@@ -86,7 +85,7 @@ export function isEvent(event: any): event is Events {
 // Errors
 
 function renderMissingLocal(event: MissingLocalPackageEvent) {
-  const { name } = event.payload;
+  const {name} = event.payload;
   console.log(
     asError(`Module ${chalk.bold(name)} is not available in your project`),
   );
@@ -98,26 +97,26 @@ function renderMissingPackage(
     | MissingLocalPackageCheckEvent
     | MissingLocalPackageRemoveEvent,
 ) {
-  const { name } = event.payload;
+  const {name} = event.payload;
   console.log(
     asError(`Module ${chalk.bold(name)} is not available in your project`),
   );
 }
 
 function renderIncorrectBympType(event: IncorrectBumpTypeEvent) {
-  const { name, type } = event.payload;
+  const {name, type} = event.payload;
   console.log(
     asError(`Failed to bump ${chalk.bold(name)} to ${chalk.bold(type)}`),
   );
 }
 
 function renderMultipleVersions(event: MultipleVersionEvent) {
-  const { name } = event.payload;
+  const {name} = event.payload;
   console.log(asError(`Module ${chalk.bold(name)} has multiple versions`));
 }
 
 function renderTagOnLocal(event: TagOnLocalPackageEvent) {
-  const { name } = event.payload;
+  const {name} = event.payload;
   console.log(
     asError(`Can't use a dist-tag on a local package ${chalk.bold(name)}`),
   );
@@ -134,9 +133,7 @@ function renderNoIntegrity(event: NoIntegrityEvent) {
       const info = result[packageName];
 
       if (!info.integrity) {
-        logger.schedule(withIndent(1, packageName));
-
-        printDependency(info.parents, logger.schedule);
+        printDependency(packageName, info.parents, logger.schedule);
 
         // emit logs
         logger.commit();
@@ -148,7 +145,7 @@ function renderNoIntegrity(event: NoIntegrityEvent) {
 // Results
 
 function renderAddResult(result: AddDependencyResult): void {
-  const { name, parent, version, type } = result.payload;
+  const {name, parent, version, type} = result.payload;
   console.log(
     asSuccess(
       `Package ${chalk.bold(name)}@${chalk.bold(version)} added to ${chalk.bold(
@@ -159,40 +156,41 @@ function renderAddResult(result: AddDependencyResult): void {
 }
 
 function renderBumpResult(result: BumpVersionResult): void {
-  const { name, version } = result.payload;
+  const {name, version} = result.payload;
   console.log(
     asSuccess(`${chalk.bold(name)} was bumped to ${chalk.bold(version)}`),
   );
 }
 
 function renderCheckResult(result: CheckIntegrityResult): void {
-  const { name } = result.payload;
+  const {name} = result.payload;
   console.log(
     asSuccess(`No multiple versions ${name ? `of ${chalk.bold(name)}` : ''}`),
   );
 }
 
 function renderGetResult(result: GetVersionResult): void {
-  const { name, version } = result.payload;
+  const {name, version} = result.payload;
   const logger = useLogger();
 
   if (typeof version === 'string') {
     logger.schedule(asSuccess(`${chalk.bold(name)} is ${chalk.bold(version)}`));
   } else {
-    logger.schedule(asSuccess(`${chalk.bold(name)}`));
-    printDependency(version, logger.schedule);
+    logger.schedule(asError(`Multiple versions`));
+    logger.break();
+    printDependency(name, version, logger.schedule);
   }
 
   logger.commit();
 }
 
 function renderSetResult(result: SetVersionResult): void {
-  const { name, version } = result.payload;
+  const {name, version} = result.payload;
   console.log(asSuccess(`${chalk.bold(name)} is now ${chalk.bold(version)}`));
 }
 
 function renderRemoveResult(result: RemoveDependencyResult): void {
-  const { name, parent } = result.payload;
+  const {name, parent} = result.payload;
   console.log(
     asSuccess(`${chalk.bold(name)} removed from ${chalk.bold(parent)}`),
   );
@@ -200,8 +198,14 @@ function renderRemoveResult(result: RemoveDependencyResult): void {
 
 // other
 
-function printDependency(dep: Dependency, onLog: (msg: string) => void) {
-  const versions: { [version: string]: string[] } = {};
+function printDependency(
+  name: string,
+  dep: Dependency,
+  onLog: (...msgs: string[]) => void,
+) {
+  const versions: {[version: string]: string[]} = {};
+
+  onLog(name);
 
   // assign packages to versions
   for (const name in dep) {
@@ -224,13 +228,19 @@ function printDependency(dep: Dependency, onLog: (msg: string) => void) {
     }
   }
 
-  Object.keys(versions).forEach(version => {
+  Object.keys(versions).forEach((version, i, all) => {
+    const isLast = all.length === i + 1;
     const packages = versions[version].filter(
       (val, i, all) => all.indexOf(val) === i,
     );
 
     // version: p,a,c,k,a,g,e,s
-    onLog(withIndent(2, `${chalk.gray(version)}: ${packages.join(', ')}`));
+    onLog(
+      chalk.gray(isLast ? '└─' : '├─'),
+      version,
+      chalk.gray.italic(`(${packages.length})`),
+      chalk.gray(packages.join(', ')),
+    );
   });
 }
 
@@ -240,8 +250,11 @@ function useLogger() {
   let logs: string[] = [];
 
   return {
-    schedule(msg: string) {
-      logs.push(msg);
+    schedule(...msgs: string[]) {
+      logs.push(msgs.join(' '));
+    },
+    break() {
+      logs.push('');
     },
     commit() {
       logs.forEach(msg => console.log(msg));
@@ -250,14 +263,14 @@ function useLogger() {
   };
 }
 
-function withIndent(size: number, msg: string): string {
-  return `${'  '.repeat(size)}${msg}`;
-}
+// function withIndent(size: number, msg: string): string {
+//   return `${'  '.repeat(size)}${msg}`;
+// }
 
 function asError(msg: string): string {
-  return `${symbols.error} ${msg}`;
+  return `${chalk.redBright('error')} ${msg}`;
 }
 
 function asSuccess(msg: string): string {
-  return `${symbols.success} ${msg}`;
+  return `${chalk.greenBright('success')} ${msg}`;
 }
