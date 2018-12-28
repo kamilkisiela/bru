@@ -1,6 +1,9 @@
 workflow "Build, Test, and Publish" {
   on = "push"
-  resolves = ["Publish"]
+  resolves = [
+    "Test",
+    "Release",
+  ]
 }
 
 action "Install" {
@@ -26,16 +29,9 @@ action "Test" {
   args = "test"
 }
 
-# Filter for master branch
-action "Tag" {
-  needs = "Test"
-  uses = "actions/bin/filter@master"
-  args = "tag v*"
-}
-
-action "Publish" {
+action "Release" {
   uses = "actions/npm@master"
-  args = "publish --access public"
+  needs = ["Install"]
+  args = "run release"
   secrets = ["NPM_AUTH_TOKEN"]
-  needs = ["Tag"]
 }
