@@ -1,9 +1,6 @@
 workflow "Build, Test, and Publish" {
   on = "push"
-  resolves = [
-    "Test",
-    "Release",
-  ]
+  resolves = "Test"
 }
 
 action "Install" {
@@ -29,13 +26,17 @@ action "Test" {
   args = "test"
 }
 
+workflow "Publish on Tag" {
+  on = "push"
+  resolves = "Publish"
+}
+
 action "Tag" {
   uses = "actions/bin/filter@master"
-  needs = ["Install"]
   args = "tag v*"
 }
 
-action "Release" {
+action "Publish" {
   uses = "actions/npm@master"
   needs = ["Tag"]
   args = "run release"
