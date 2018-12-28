@@ -17,7 +17,7 @@ action "Build" {
 action "Examples" {
   needs = "Build"
   uses = "borales/actions-yarn@master"
-  args = "prepare"
+  args = "examples"
 }
 
 action "Test" {
