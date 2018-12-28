@@ -1,6 +1,6 @@
-import { ReleaseType } from 'semver';
+import {ReleaseType} from 'semver';
 // api
-import { addDependency, AddEvents } from './add';
+import {addDependency, AddEvents} from './add';
 import {
   checkIntegrity,
   IntegrityEvents,
@@ -8,16 +8,16 @@ import {
   hasIntegrity,
   NoIntegrityEvent,
 } from './check';
-import { setVersionOf, bumpVersionOf, SetEvents } from './set';
-import { getVersionOf, GetEvents } from './get';
-import { removeDependency, RemoveEvents } from './remove';
+import {setVersionOf, bumpVersionOf, SetEvents} from './set';
+import {getVersionOf, GetEvents} from './get';
+import {removeDependency, RemoveEvents} from './remove';
 // internal
-import { isTag } from '../internal/utils';
-import { fetchVersionByTag } from '../internal/npm-api';
-import { TagOnLocalPackageEvent, CommonEvents } from '../internal/events';
-import { findLocations } from '../internal/manager';
-import { Event } from '../internal/events';
-import { runHook } from '../internal/hooks';
+import {isTag} from '../internal/utils';
+import {fetchVersionByTag} from '../internal/npm-api';
+import {TagOnLocalPackageEvent, CommonEvents} from '../internal/events';
+import {findLocations} from '../internal/manager';
+import {Event} from '../internal/events';
+import {runHook} from '../internal/hooks';
 import {
   createRegistry,
   ensureVersionOf,
@@ -108,7 +108,7 @@ export default {
       parent,
     });
   },
-  async remove({ name, parent }: { name: string; parent: string | null }) {
+  async remove({name, parent}: {name: string; parent: string | null}) {
     const locations = await findLocations();
     const registry = await createRegistry(locations);
 

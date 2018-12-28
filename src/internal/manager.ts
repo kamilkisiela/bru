@@ -1,4 +1,4 @@
-import { resolve, join } from 'path';
+import {resolve, join} from 'path';
 import * as execa from 'execa';
 
 import setup from './setup';
@@ -21,7 +21,7 @@ export async function findLocations(): Promise<string[]> {
   const locations: string[] = [cwd];
 
   if (manager === 'lerna') {
-    const { stdout } = await execa('lerna', ['ls', '-pla'], {
+    const {stdout} = await execa('lerna', ['ls', '-pla'], {
       cwd,
     });
 
@@ -34,7 +34,7 @@ export async function findLocations(): Promise<string[]> {
   }
 
   if (manager === 'yarn') {
-    const { stdout } = await execa('yarn', ['workspaces', 'info'], {
+    const {stdout} = await execa('yarn', ['workspaces', 'info'], {
       cwd,
     });
     const info: {

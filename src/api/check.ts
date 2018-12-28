@@ -1,6 +1,6 @@
 // internal
-import { createGraph, Dependency, Registry } from '../internal/registry';
-import { Event } from '../internal/events';
+import {createGraph, Dependency, Registry} from '../internal/registry';
+import {Event} from '../internal/events';
 
 export enum IntegrityTypes {
   MissingPackage = '[Integrity] Missing package',

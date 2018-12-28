@@ -1,8 +1,8 @@
-import { resolve } from 'path';
+import {resolve} from 'path';
 import setup from '../../src/internal/setup';
-import { managers } from '../common';
+import {managers} from '../common';
 import api from '../../src/api';
-import { fs } from '../../src/internal/fs';
+import {fs} from '../../src/internal/fs';
 
 describe('Add dependency', () => {
   afterEach(() => {
