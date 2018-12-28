@@ -34,10 +34,11 @@
     "prerelease": "yarn build",
     "release": "npm publish",
     "test": "jest",
-    "format": "prettier --write {src,tests}/**/*.ts"
+    "format": "prettier --write **/*.ts",
+    "precommit": "lint-staged"
   },
   "lint-staged": {
-    "{src,tests}/**/*.ts": [
+    "**/*.ts": [
       "prettier --write",
       "git add"
     ]
