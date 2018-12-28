@@ -1,9 +1,9 @@
-import { ReleaseType, inc } from 'semver';
+import {ReleaseType, inc} from 'semver';
 // api
-import { getVersionOf, MissingPackageEvent } from './get';
+import {getVersionOf, MissingPackageEvent} from './get';
 // internal
-import { updatePackages } from '../internal/fs';
-import { Event } from '../internal/events';
+import {updatePackages} from '../internal/fs';
+import {Event} from '../internal/events';
 import {
   createGraph,
   createPackageMap,
@@ -27,7 +27,7 @@ export async function bumpVersionOf({
   type: ReleaseType;
   registry: Registry;
 }) {
-  const currentVersion = await getVersionOf({ name, registry });
+  const currentVersion = await getVersionOf({name, registry});
 
   if (typeof currentVersion !== 'string') {
     throw new MultipleVersionEvent({

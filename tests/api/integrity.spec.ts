@@ -1,51 +1,51 @@
-import { resolve } from 'path';
+import {resolve} from 'path';
 import setup from '../../src/internal/setup';
-import { updatePackages, fs } from '../../src/internal/fs';
-import { managers } from '../common';
+import {updatePackages, fs} from '../../src/internal/fs';
+import {managers} from '../common';
 import api from '../../src/api';
-import { hasIntegrity, NoIntegrityEvent } from '../../src/api/check';
+import {hasIntegrity, NoIntegrityEvent} from '../../src/api/check';
 
 describe('Integrity', () => {
   afterEach(() => {
     setup.fs = fs;
   });
-  
+
   test('hasIntegrity', () => {
     // all true
     expect(
       hasIntegrity({
-        foo: { integrity: true, parents: {} },
-        bar: { integrity: true, parents: {} },
+        foo: {integrity: true, parents: {}},
+        bar: {integrity: true, parents: {}},
       }),
     ).toEqual(true);
 
     // all false
     expect(
       hasIntegrity({
-        foo: { integrity: false, parents: {} },
-        bar: { integrity: false, parents: {} },
+        foo: {integrity: false, parents: {}},
+        bar: {integrity: false, parents: {}},
       }),
     ).toEqual(false);
 
     // all and one false
     expect(
       hasIntegrity({
-        foo: { integrity: true, parents: {} },
-        bar: { integrity: false, parents: {} },
+        foo: {integrity: true, parents: {}},
+        bar: {integrity: false, parents: {}},
       }),
     ).toEqual(false);
 
     // single and true
     expect(
       hasIntegrity({
-        foo: { integrity: true, parents: {} },
+        foo: {integrity: true, parents: {}},
       }),
     ).toEqual(true);
 
     // single and false
     expect(
       hasIntegrity({
-        foo: { integrity: false, parents: {} },
+        foo: {integrity: false, parents: {}},
       }),
     ).toEqual(false);
 
@@ -59,7 +59,6 @@ describe('Integrity', () => {
 
       beforeEach(async () => {
         setup.cwd = cwd;
-        
       });
 
       test.skip('single dependency (external) with multiple versions', async () => {
@@ -75,12 +74,12 @@ describe('Integrity', () => {
           type: 'UPDATE',
           name: 'graphql',
           version: '14.0.3',
-          location: cwd
+          location: cwd,
         });
         await updater.commit();
 
         let event: NoIntegrityEvent | undefined = undefined;
-        
+
         try {
           await api.check('graphql');
         } catch (e) {
@@ -91,13 +90,13 @@ describe('Integrity', () => {
           type: 'UPDATE',
           name: 'graphql',
           version: '14.0.2',
-          location: cwd
+          location: cwd,
         });
         await updater.commit();
 
         expect(event).toBeDefined();
 
-        const { payload } = event!;
+        const {payload} = event!;
 
         expect(payload.result.graphql.integrity).toEqual(false);
         expect(payload.result.graphql.parents).toHaveProperty('@example/core');
@@ -112,7 +111,7 @@ describe('Integrity', () => {
       });
 
       test('single dependency (external)', async () => {
-        const { payload } = await api.check('graphql');
+        const {payload} = await api.check('graphql');
 
         expect(payload.name).toEqual('graphql');
         expect(payload.result.graphql.integrity).toEqual(true);
@@ -128,18 +127,18 @@ describe('Integrity', () => {
       });
 
       test('unused package (local)', async () => {
-        const { payload } = await api.check('@example/angular');
+        const {payload} = await api.check('@example/angular');
 
         expect(payload.result['@example/angular'].integrity).toEqual(true);
       });
 
       test('package used once (external)', async () => {
-        const { payload } = await api.check('react');
+        const {payload} = await api.check('react');
 
         expect(payload.result['react'].integrity).toEqual(true);
       });
       test('of all', async () => {
-        const { payload } = await api.check();
+        const {payload} = await api.check();
 
         const {
           graphql,

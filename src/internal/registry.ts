@@ -1,9 +1,9 @@
-import { join } from 'path';
-import { DepGraph } from 'dependency-graph';
+import {join} from 'path';
+import {DepGraph} from 'dependency-graph';
 
-import { pickProp, isTag } from './utils';
+import {pickProp, isTag} from './utils';
 import setup from './setup';
-import { fetchVersionByTag } from './npm-api';
+import {fetchVersionByTag} from './npm-api';
 
 export interface Package {
   name: string;

@@ -1,13 +1,13 @@
-import { readFile, writeFile } from 'fs';
-import { join } from 'path';
+import {readFile, writeFile} from 'fs';
+import {join} from 'path';
 import immer from 'immer';
 import * as detectStringIndent from 'detect-indent';
 
 import setup from './setup';
-import { ensureProp, updateProp } from './utils';
+import {ensureProp, updateProp} from './utils';
 
 export function detectIndent(data: string): string {
-  const { indent } = detectStringIndent(data);
+  const {indent} = detectStringIndent(data);
 
   return indent;
 }
@@ -22,7 +22,7 @@ export interface FileSystem {
 export const fs: FileSystem = {
   async writeFile(filepath, data) {
     return new Promise<any>((resolve, reject) => {
-      writeFile(filepath, data, { encoding: 'utf-8' }, err => {
+      writeFile(filepath, data, {encoding: 'utf-8'}, err => {
         if (err) {
           reject(err);
         } else {
@@ -33,7 +33,7 @@ export const fs: FileSystem = {
   },
   async readFile(filepath) {
     return new Promise<string>((resolve, reject) => {
-      readFile(filepath, { encoding: 'utf-8' }, (err, raw) => {
+      readFile(filepath, {encoding: 'utf-8'}, (err, raw) => {
         if (err) {
           reject(err);
         } else {

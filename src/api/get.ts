@@ -1,8 +1,8 @@
 // api
-import { checkIntegrity, hasIntegrity } from './check';
+import {checkIntegrity, hasIntegrity} from './check';
 // internal
-import { createGraph, Dependency, Registry } from '../internal/registry';
-import { Event } from '../internal/events';
+import {createGraph, Dependency, Registry} from '../internal/registry';
+import {Event} from '../internal/events';
 
 export enum GetTypes {
   MissingPackage = '[Get] Missing package',

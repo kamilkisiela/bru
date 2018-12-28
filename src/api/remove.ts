@@ -1,7 +1,7 @@
 // internal
-import { Registry, createPackageMap } from '../internal/registry';
-import { updatePackages } from '../internal/fs';
-import { Event } from '../internal/events';
+import {Registry, createPackageMap} from '../internal/registry';
+import {updatePackages} from '../internal/fs';
+import {Event} from '../internal/events';
 
 export enum RemoveTypes {
   MissingLocal = '[Delete] Missing local package',

@@ -1,7 +1,7 @@
 // internal
-import { Registry, createPackageMap } from '../internal/registry';
-import { updatePackages } from '../internal/fs';
-import { Event } from '../internal/events';
+import {Registry, createPackageMap} from '../internal/registry';
+import {updatePackages} from '../internal/fs';
+import {Event} from '../internal/events';
 
 export enum AddTypes {
   MissingLocal = '[Add] Missing local package',
@@ -29,7 +29,7 @@ export async function addDependency({
 
   if (!parent) {
     throw new MissingLocalPackageEvent({
-      name: parent
+      name: parent,
     });
   }
 
