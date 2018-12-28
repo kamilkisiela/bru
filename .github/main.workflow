@@ -36,9 +36,15 @@ action "Tag" {
   args = "tag v*"
 }
 
+action "Install to publish" {
+  uses = "borales/actions-yarn@master"
+  args = "install"
+  needs = ["Tag"]
+}
+
 action "Publish" {
   uses = "actions/npm@master"
-  needs = ["Tag"]
+  needs = ["Install to publish"]
   args = "run release"
   secrets = ["NPM_AUTH_TOKEN"]
 }
