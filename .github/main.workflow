@@ -8,8 +8,13 @@ action "Build" {
   args = "install"
 }
 
+action "Examples" {
+  uses = "borales/actions-yarn@master"
+  args = "prepare"
+}
+
 action "Test" {
-  needs = "Build"
+  needs = "Examples"
   uses = "borales/actions-yarn@master"
   args = "test"
 }
