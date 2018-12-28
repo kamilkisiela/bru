@@ -29,9 +29,15 @@ action "Test" {
   args = "test"
 }
 
+action "Tag" {
+  uses = "actions/bin/filter@master"
+  needs = ["Install"]
+  args = "tag v*"
+}
+
 action "Release" {
   uses = "actions/npm@master"
-  needs = ["Install"]
+  needs = ["Tag"]
   args = "run release"
   secrets = ["NPM_AUTH_TOKEN"]
 }
