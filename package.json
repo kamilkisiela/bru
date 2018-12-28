@@ -35,6 +35,7 @@
     "release": "npm publish",
     "test": "jest",
     "format": "prettier --write **/*.ts",
+    "examples": "(cd example/yarn && yarn) && (cd example/lerna && yarn)",
     "precommit": "lint-staged"
   },
   "lint-staged": {
