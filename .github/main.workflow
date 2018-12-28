@@ -3,12 +3,19 @@ workflow "Build, Test, and Publish" {
   resolves = ["Publish"]
 }
 
-action "Build" {
+action "Install" {
   uses = "borales/actions-yarn@master"
   args = "install"
 }
 
+action "Build" {
+  needs = "Install"
+  uses = "borales/actions-yarn@master"
+  args = "build"
+}
+
 action "Examples" {
+  needs = "Build"
   uses = "borales/actions-yarn@master"
   args = "prepare"
 }
@@ -20,15 +27,15 @@ action "Test" {
 }
 
 # Filter for master branch
-action "Master" {
+action "Tag" {
   needs = "Test"
   uses = "actions/bin/filter@master"
   args = "tag v*"
 }
 
 action "Publish" {
-  needs = "Master"
   uses = "actions/npm@master"
   args = "publish --access public"
   secrets = ["NPM_AUTH_TOKEN"]
+  needs = ["Tag"]
 }
